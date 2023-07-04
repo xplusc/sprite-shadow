@@ -18,6 +18,7 @@ final float X_DOT_X  =  sqrt(2) / 2;
 final float X_DOT_Y  = (sqrt(2) / 2) * tan(CAMERA_ANGLE_OF_ALTITUDE) * cos(CAMERA_ANGLE_OF_ALTITUDE);
 final float Y_DOT_X  = 0;
 final float Y_DOT_Y  = cos(CAMERA_ANGLE_OF_ALTITUDE);
+final PVector ORIGIN = new PVector(SCREEN_WIDTH / 2, 3 * SCREEN_HEIGHT / 4); // where (0, 0, 0) is on the screen
 final PVector X_UNIT = new PVector(-X_DOT_X, -X_DOT_Y); // for transforming world coordinates
 final PVector Z_UNIT = new PVector( X_DOT_X, -X_DOT_Y); // onto the screen
 final PVector Y_UNIT = new PVector( Y_DOT_X, -Y_DOT_Y);
@@ -35,12 +36,12 @@ void initObjectsFromJSON(String path)
   // TODO
 }
 
-PVector scale(PVector p, float s)
+PVector pv_scale(PVector p, float s)
 {
   return new PVector(s * p.x, s * p.y, s * p.z);
 }
 
-PVector add(PVector p, PVector q)
+PVector pv_add(PVector p, PVector q)
 {
   return new PVector(p.x + q.x, p.y + q.y, p.z + q.z);
 }
@@ -48,11 +49,18 @@ PVector add(PVector p, PVector q)
 PVector worldToScreen(PVector wc)
 {
   PVector sc = new PVector();
-  sc = add(scale(X_UNIT, wc.x), add(scale(Y_UNIT, wc.y), scale(Z_UNIT, wc.z)));
-  sc.x += SCREEN_WIDTH  / 2;
-  sc.y += 3 * SCREEN_HEIGHT / 4;
+  sc = pv_add(pv_scale(X_UNIT, wc.x), pv_add(pv_scale(Y_UNIT, wc.y), pv_scale(Z_UNIT, wc.z)));
+  sc = pv_add(sc, ORIGIN);
   //println(sc);
   return sc;
+}
+
+PVector screenToWorld(PVector sc)
+{
+  sc = pv_add(sc, pv_scale(ORIGIN, -1)); // shift sc so the origin is back at (0, 0)
+  PVector wc = new PVector(X_UNIT.dot(sc), 0, Z_UNIT.dot(sc));
+  //println(wc);
+  return wc; // assumes the y coordinate is 0
 }
 
 float distanceFromCameraPlane(PVector p)
@@ -116,6 +124,7 @@ void setup()
   //println(C_UNIT.dot(new PVector(1, 0, 0)));
   //println(C_UNIT.dot(new PVector(0, 1, 0)));
   //println(C_UNIT.dot(new PVector(0, 0, 1)));
+  //println(screenToWorld(new PVector(0, 360)));
   
   // initialize flags
   show_zdepth = false;
@@ -145,11 +154,16 @@ void draw()
 {
   //background(0);
   fb.clear();
+  zd.clear();
   
   PImage current_sprite = show_zdepth ? loy_mech_01_lo_zd : loy_mech_01_lo;
   fb.addSprite(current_sprite, round(320 - PIXEL_SCALE * current_sprite.width / 2), round(360 - PIXEL_SCALE * current_sprite.height));
   
-  fb.draw();
+  if (show_zdepth) {
+    zd.draw();
+  } else {
+    fb.draw();
+  }
   
   drawPoint(new PVector(0, 0, 0));
   int size = 20;

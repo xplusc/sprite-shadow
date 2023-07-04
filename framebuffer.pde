@@ -54,22 +54,6 @@ class FrameBuffer {
         }
       }
     }
-    /*for (int sp_y = 0, sc_y = y_pos; sp_y < sp.height; ++sp_y, sc_y += PIXEL_SCALE) {
-      for (int sp_x = 0, sc_x = x_pos; sp_x < sp.width; ++sp_x, sc_x += PIXEL_SCALE) {
-        if ((sp.pixels[sp_x + sp.width * sp_y] & 0x000000FF) == 0) {
-          continue; // ignore transparent pixels
-        }
-        if (
-          sc_x <  0 ||
-          sc_x + PIXEL_SCALE - 1 >= SCREEN_WIDTH ||
-          sc_y <  0 ||
-          sc_y + PIXEL_SCALE - 1 >= SCREEN_HEIGHT
-        ) {
-          continue; // don't draw out of bounds
-        }
-        frame[y + y_pos][x + x_pos] = sp.pixels[x + sp.width * y];
-      }
-    }*/
     updatePixels();
   }
   
