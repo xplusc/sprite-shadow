@@ -12,20 +12,42 @@ class DepthBuffer {
     w = SCREEN_WIDTH;
     h = SCREEN_HEIGHT;
     frame = new float[h][w];
-    min = INF;
+    min =  INF;
     max = -INF;
   }
   
   void clear()
   {
-    min = 0.0;
-    max = 0.0;
+    min =  INF;
+    max = -INF;
     for (int y = 0; y < h; ++y) {
       for (int x = 0; x < w; ++x) {
         float depth = distanceFromCameraPlane(screenToWorld(new PVector(x, y)));
         min = min(depth, min);
         max = max(depth, max);
         frame[y][x] = depth;
+      }
+    }
+  }
+  
+  void setPixel(PVector pos, float depth)
+  {
+    // get PIXEL_SCALE grid-aligned screen coordinates
+    int screen_x = (int) PIXEL_SCALE * (int) (pos.x / PIXEL_SCALE);
+    int screen_y = (int) PIXEL_SCALE * (int) (pos.y / PIXEL_SCALE);
+    
+    for (int y = 0; y < PIXEL_SCALE; ++y) {
+      for (int x = 0; x < PIXEL_SCALE; ++x) {
+        if (
+          x + screen_x >= 0 &&
+          x + screen_x <  w &&
+          y + screen_y >= 0 &&
+          y + screen_y <  h
+        ) {
+          frame[y + screen_y][x + screen_x] = depth;
+          min = min(depth, min);
+          max = max(depth, max);
+        }
       }
     }
   }

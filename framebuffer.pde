@@ -29,6 +29,30 @@ class FrameBuffer {
     updatePixels();
   }
   
+  void setPixel(PVector pos, color c)
+  {
+    // get PIXEL_SCALE grid-aligned screen coordinates
+    int screen_x = (int) PIXEL_SCALE * (int) (pos.x / PIXEL_SCALE);
+    int screen_y = (int) PIXEL_SCALE * (int) (pos.y / PIXEL_SCALE);
+    //println("sc: (", screen_x, ", ", screen_y, ")");
+    
+    for (int y = 0; y < PIXEL_SCALE; ++y) {
+      for (int x = 0; x < PIXEL_SCALE; ++x) {
+        if (
+          x + screen_x >= 0 &&
+          x + screen_x <  w &&
+          y + screen_y >= 0 &&
+          y + screen_y <  h
+        ) {
+          //println("(x, y): (", x, ", ", y, ")");
+          //println("[y + screen_y][x + screen_x]: ", (y + screen_y) * w + x + screen_x);
+          //println(c);
+          frame[y + screen_y][x + screen_x] = c;
+        }
+      }
+    }
+  }
+  
   void addSprite(PImage sp, int x_pos, int y_pos)
   {
     loadPixels();
@@ -45,9 +69,9 @@ class FrameBuffer {
         if ((sp.pixels[sp_x + sp.width * sp_y] & 0x000000FF) > 0) {
           if (
             x + x_pos >= 0 &&
-            x + x_pos < SCREEN_WIDTH &&
+            x + x_pos <  w &&
             y + y_pos >= 0 &&
-            y + y_pos < SCREEN_HEIGHT
+            y + y_pos <  h
           ) {
             frame[y + y_pos][x + x_pos] = sp.pixels[sp_x + sp.width * sp_y];
           }
