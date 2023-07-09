@@ -15,7 +15,7 @@ final float PIXEL_SCALE         = 3;       // screen pixels per framebuffer pixe
 
 final float CAMERA_ANGLE_OF_ALTITUDE = 30 * PI / 180; // radians, 30 degrees
 final float X_DOT_X  =  sqrt(2) / 2;
-final float X_DOT_Y  = (sqrt(2) / 2) * tan(CAMERA_ANGLE_OF_ALTITUDE) * cos(CAMERA_ANGLE_OF_ALTITUDE);
+final float X_DOT_Y  = (sqrt(2) / 2) * sin(CAMERA_ANGLE_OF_ALTITUDE);
 final float Y_DOT_X  = 0;
 final float Y_DOT_Y  = cos(CAMERA_ANGLE_OF_ALTITUDE);
 final PVector ORIGIN = new PVector(SCREEN_WIDTH / 2, 3 * SCREEN_HEIGHT / 4); // where (0, 0, 0) is on the screen
@@ -46,6 +46,11 @@ PVector pv_add(PVector p, PVector q)
   return new PVector(p.x + q.x, p.y + q.y, p.z + q.z);
 }
 
+PVector pv_sub(PVector p, PVector q)
+{
+  return new PVector(p.x - q.x, p.y - q.y, p.z - q.z);
+}
+
 PVector worldToScreen(PVector wc)
 {
   PVector sc = new PVector();
@@ -57,10 +62,29 @@ PVector worldToScreen(PVector wc)
 
 PVector screenToWorld(PVector sc)
 {
-  sc = pv_add(sc, pv_scale(ORIGIN, -1)); // shift sc so the origin is back at (0, 0)
-  //println(sc);
-  PVector wc = new PVector(X_UNIT.dot(sc), 0, Z_UNIT.dot(sc));
-  //println(wc);
+  sc = pv_sub(sc, ORIGIN); // shift sc so the origin is back at (0, 0)
+  //println("sc: ", sc);
+  float x_dot  = sc.x * X_UNIT.x + sc.y * X_UNIT.y;
+  float z_dot  = sc.x * Z_UNIT.x + sc.y * Z_UNIT.y;
+  float sc_mag = sc.mag();
+  float xz_mag = X_UNIT.mag(); // X_UNIT and Z_UNIT have the same magnitude
+  float m      = X_UNIT.y / X_UNIT.x; // slope of the x and z-axis lines
+  float x_ht   =  m * sc.x; // height (y coord) of x-axis at sc.x
+  float z_ht   = -m * sc.x; // height (y coord) of z-axis at sc.x
+  float sign_x = sc.y > z_ht ? -1 : 1; // choice of sign depends on sc being
+  float sign_z = sc.y > x_ht ? -1 : 1; // above or below the x or z-axis
+  float a      = acos(sign_x * x_dot / (sc_mag * xz_mag)); // a is angle from sc to x-axis
+  float b      = acos(sign_z * z_dot / (sc_mag * xz_mag)); // b is angle from sc to z-axis
+  a = Float.isNaN(a) ? 0 : a; // check if directly on axes
+  b = Float.isNaN(b) ? 0 : b;
+  float c      = PI - a - b;
+  //println("a: ", a);
+  //println("b: ", b);
+  //println("c: ", c);
+  float law_of_sines = sc_mag / (sin(c) * xz_mag);
+  law_of_sines = Float.isNaN(law_of_sines) ? 0 : law_of_sines; // check for divide-by-zero, if there is one we're probably at the origin
+  PVector wc   = new PVector(sign_x * sin(b) * law_of_sines, 0, sign_z * sin(a) * law_of_sines);
+  //println("wc: ", wc);
   return wc; // assumes the y coordinate is 0
 }
 
@@ -117,10 +141,10 @@ void setup()
   //println(C_UNIT.dot(new PVector(0, 1, 0)));
   //println(C_UNIT.dot(new PVector(0, 0, 1)));
   //println(screenToWorld(new PVector(0, 360)));
-  //PVector v = new PVector(100, 0, 200);
-  //println(v);
-  //println(worldToScreen(v));
-  //println(screenToWorld(worldToScreen(v)));
+  PVector v = new PVector( 100, 0,  200);
+  println(v);
+  println(worldToScreen(v));
+  println(screenToWorld(worldToScreen(v)));
   
   // initialize flags
   show_zdepth = false;
