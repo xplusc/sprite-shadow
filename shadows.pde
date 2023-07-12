@@ -11,7 +11,7 @@ final int   SCREEN_HEIGHT       = 480;     // pixels
 //final float WORLD_WIDTH         = 400;     // world units
 //final float WORLD_HEIGHT        = 300;     // world units
 //final float WORLD_TO_SCREEN     = SCREEN_WIDTH / WORLD_WIDTH;
-final float PIXEL_SCALE         = 3;       // screen pixels per framebuffer pixel
+final float PIXEL_SCALE         = 8;       // screen pixels per framebuffer pixel
 
 final float CAMERA_ANGLE_OF_ALTITUDE = 30 * PI / 180; // radians, 30 degrees
 final float X_DOT_X  =  sqrt(2) / 2;
@@ -90,13 +90,13 @@ PVector screenToWorld(PVector sc)
 
 float distanceFromCameraPlane(PVector p)
 {
-  return C_UNIT.dot(p);
+  return PVector.dot(C_UNIT, p);
 }
 
 void drawPoint(PVector p)
 {
   float d = distanceFromCameraPlane(p);
-  PVector sc = worldToScreen(p);
+  PVector sc = pv_scale(worldToScreen(p), 1 / PIXEL_SCALE);
   zd.setPixel(sc, d);
   fb.setPixel(sc, color(255));
 }
@@ -133,7 +133,7 @@ void setup()
   loy_mech_01_lo_zd = loadImage("loy_mech_01_lo_zd.png");
   
   initObjectsFromJSON("objects.json");
-  println(X_UNIT);
+  //println(X_UNIT);
   //println(Y_UNIT);
   //println(Z_UNIT);
   //println(C_UNIT);
@@ -141,10 +141,12 @@ void setup()
   //println(C_UNIT.dot(new PVector(0, 1, 0)));
   //println(C_UNIT.dot(new PVector(0, 0, 1)));
   //println(screenToWorld(new PVector(0, 360)));
-  PVector v = new PVector( 100, 0,  200);
-  println(v);
-  println(worldToScreen(v));
-  println(screenToWorld(worldToScreen(v)));
+  //PVector v = new PVector( 100, 0,  200);
+  //println(v);
+  //println(worldToScreen(v));
+  //println(screenToWorld(worldToScreen(v)));
+  //println(fb.w * fb.h);
+  //println(SCREEN_WIDTH * SCREEN_HEIGHT);
   
   // initialize flags
   show_zdepth = false;
@@ -177,7 +179,7 @@ void draw()
   zd.clear();
   
   PImage current_sprite = show_zdepth ? loy_mech_01_lo_zd : loy_mech_01_lo;
-  fb.addSprite(current_sprite, round(320 - PIXEL_SCALE * current_sprite.width / 2), round(360 - PIXEL_SCALE * current_sprite.height));
+  fb.addSprite(current_sprite, round(320 / PIXEL_SCALE - current_sprite.width / 2), round(360 / PIXEL_SCALE - current_sprite.height));
   
   drawPoint(new PVector(0, 0, 0));
   int size = 20;
