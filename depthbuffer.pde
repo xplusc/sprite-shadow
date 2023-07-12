@@ -9,8 +9,8 @@ class DepthBuffer {
   
   DepthBuffer()
   {
-    w = SCREEN_WIDTH;
-    h = SCREEN_HEIGHT;
+    w = floor(SCREEN_WIDTH  / PIXEL_SCALE);
+    h = floor(SCREEN_HEIGHT / PIXEL_SCALE);
     frame = new float[h][w];
     min =  INF;
     max = -INF;
@@ -22,7 +22,7 @@ class DepthBuffer {
     max = -INF;
     for (int y = 0; y < h; ++y) {
       for (int x = 0; x < w; ++x) {
-        float depth = distanceFromCameraPlane(screenToWorld(new PVector(x, y)));
+        float depth = distanceFromCameraPlane(screenToWorld(new PVector(x * PIXEL_SCALE, y * PIXEL_SCALE)));
         min = min(depth, min);
         max = max(depth, max);
         frame[y][x] = depth;
@@ -32,23 +32,19 @@ class DepthBuffer {
   
   void setPixel(PVector pos, float depth)
   {
-    // get PIXEL_SCALE grid-aligned screen coordinates
-    int screen_x = (int) PIXEL_SCALE * (int) (pos.x / PIXEL_SCALE);
-    int screen_y = (int) PIXEL_SCALE * (int) (pos.y / PIXEL_SCALE);
+    // align to DepthBuffer grid
+    int x = floor(pos.x);
+    int y = floor(pos.y);
     
-    for (int y = 0; y < PIXEL_SCALE; ++y) {
-      for (int x = 0; x < PIXEL_SCALE; ++x) {
-        if (
-          x + screen_x >= 0 &&
-          x + screen_x <  w &&
-          y + screen_y >= 0 &&
-          y + screen_y <  h
-        ) {
-          frame[y + screen_y][x + screen_x] = depth;
-          min = min(depth, min);
-          max = max(depth, max);
-        }
-      }
+    if (
+      x >= 0 &&
+      x <  w &&
+      y >= 0 &&
+      y <  h
+    ) {
+      frame[y][x] = depth;
+      min = min(depth, min);
+      max = max(depth, max);
     }
   }
   
@@ -58,10 +54,12 @@ class DepthBuffer {
     //println("max: ", max, ", min: ", min);
     //println("range: ", range);
     loadPixels();
-    for (int y = 0; y < h; ++y) {
-      for (int x = 0; x < w; ++x) {
-        //println("frame[y][x]: ", frame[y][x], ", - min: ", frame[y][x] - min, ", / range: ", (frame[y][x] - min) / range);
-        pixels[w * y + x] = color(255 * (1 - (frame[y][x] - min) / range));
+    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
+      for (int x = 0; x < SCREEN_WIDTH; ++x) {
+        int db_x = floor(x / PIXEL_SCALE) % w;
+        int db_y = floor(y / PIXEL_SCALE) % h;
+        //println("frame[db_y][db_x]: ", frame[db_y][db_x], ", - min: ", frame[db_y][db_x] - min, ", / range: ", (frame[db_y][db_x] - min) / range);
+        pixels[SCREEN_WIDTH * y + x] = color(255 * (1 - (frame[db_y][db_x] - min) / range));
       }
     }
     updatePixels();

@@ -11,7 +11,7 @@ final int   SCREEN_HEIGHT       = 480;     // pixels
 //final float WORLD_WIDTH         = 400;     // world units
 //final float WORLD_HEIGHT        = 300;     // world units
 //final float WORLD_TO_SCREEN     = SCREEN_WIDTH / WORLD_WIDTH;
-final float PIXEL_SCALE         = 8;       // screen pixels per framebuffer pixel
+final float PIXEL_SCALE         = 3;       // screen pixels per framebuffer pixel
 
 final float CAMERA_ANGLE_OF_ALTITUDE = 30 * PI / 180; // radians, 30 degrees
 final float X_DOT_X  =  sqrt(2) / 2;

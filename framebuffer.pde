@@ -5,8 +5,8 @@ class FrameBuffer {
   
   FrameBuffer()
   {
-    w = (int) (SCREEN_WIDTH  / PIXEL_SCALE);
-    h = (int) (SCREEN_HEIGHT / PIXEL_SCALE);
+    w = floor(SCREEN_WIDTH  / PIXEL_SCALE);
+    h = floor(SCREEN_HEIGHT / PIXEL_SCALE);
     frame = new color[h][w];
     
     for (int y = 0; y < h; ++y) {
@@ -18,7 +18,6 @@ class FrameBuffer {
   
   void clear()
   {
-    //loadPixels();
     for (int y = 0; y < h; ++y) {
       for (int x = 0; x < w; ++x) {
         //print("(" + x + ", " + y + ")\n");
@@ -26,14 +25,13 @@ class FrameBuffer {
         frame[y][x] = color(0);
       }
     }
-    //updatePixels();
   }
   
   void setPixel(PVector pos, color c)
   {
     // align to FrameBuffer grid
-    int x = (int) pos.x;
-    int y = (int) pos.y;
+    int x = floor(pos.x);
+    int y = floor(pos.y);
     //println("sc: (", screen_x, ", ", screen_y, ")");
     if (
       x >= 0 &&
@@ -74,15 +72,15 @@ class FrameBuffer {
   void draw()
   {
     loadPixels();
-    for (int y = 0; y < h * PIXEL_SCALE; ++y) {
-      for (int x = 0; x < w * PIXEL_SCALE; ++x) {
+    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
+      for (int x = 0; x < SCREEN_WIDTH; ++x) {
         //print("xy:    (" + x + ", " + y + ")\n");
-        int fb_x = (int) (x / PIXEL_SCALE);
-        int fb_y = (int) (y / PIXEL_SCALE);
+        int fb_x = floor(x / PIXEL_SCALE) % w;
+        int fb_y = floor(y / PIXEL_SCALE) % h;
         //print("fb_xy: (" + fb_x + ", " + fb_y + ")\n");
         //println(fb_x + w * fb_y);
         //print("frame[fb_y][fb_x]: " + frame[fb_y][fb_x] + "\n");
-        pixels[w * (int) PIXEL_SCALE * y + x] = frame[fb_y][fb_x];
+        pixels[SCREEN_WIDTH * y + x] = frame[fb_y][fb_x];
       }
     }
     updatePixels();
