@@ -41,28 +41,18 @@ PVector pv_scale(PVector p, float s)
   return new PVector(s * p.x, s * p.y, s * p.z);
 }
 
-PVector pv_add(PVector p, PVector q)
-{
-  return new PVector(p.x + q.x, p.y + q.y, p.z + q.z);
-}
-
-PVector pv_sub(PVector p, PVector q)
-{
-  return new PVector(p.x - q.x, p.y - q.y, p.z - q.z);
-}
-
 PVector worldToScreen(PVector wc)
 {
   PVector sc = new PVector();
-  sc = pv_add(pv_scale(X_UNIT, wc.x), pv_add(pv_scale(Y_UNIT, wc.y), pv_scale(Z_UNIT, wc.z)));
-  sc = pv_add(sc, ORIGIN);
+  sc = PVector.add(pv_scale(X_UNIT, wc.x), PVector.add(pv_scale(Y_UNIT, wc.y), pv_scale(Z_UNIT, wc.z)));
+  sc = PVector.add(sc, ORIGIN);
   //println(sc);
   return sc;
 }
 
 PVector screenToWorld(PVector sc)
 {
-  sc = pv_sub(sc, ORIGIN); // shift sc so the origin is back at (0, 0)
+  sc = PVector.sub(sc, ORIGIN); // shift sc so the origin is back at (0, 0)
   //println("sc: ", sc);
   float x_dot  = sc.x * X_UNIT.x + sc.y * X_UNIT.y;
   float z_dot  = sc.x * Z_UNIT.x + sc.y * Z_UNIT.y;
@@ -88,17 +78,17 @@ PVector screenToWorld(PVector sc)
   return wc; // assumes the y coordinate is 0
 }
 
-float distanceFromCameraPlane(PVector p)
+float distanceFromCameraPlane(PVector wc)
 {
-  return PVector.dot(C_UNIT, p);
+  return PVector.dot(C_UNIT, wc);
 }
 
-void drawPoint(PVector p)
+void drawPoint(PVector wc)
 {
-  float d = distanceFromCameraPlane(p);
-  PVector sc = pv_scale(worldToScreen(p), 1 / PIXEL_SCALE);
-  zd.setPixel(sc, d);
-  fb.setPixel(sc, color(255));
+  float d = distanceFromCameraPlane(wc); // wu
+  PVector fc = pv_scale(worldToScreen(wc), 1 / PIXEL_SCALE); // frame coordinate
+  zd.setPixel(fc, d);
+  fb.setPixel(fc, color(255));
 }
 
 /* ----- SETUP ----- */
@@ -109,6 +99,9 @@ FrameBuffer fb;
 DepthBuffer zd;
 PImage loy_mech_01_lo;
 PImage loy_mech_01_lo_zd;
+PImage greybox_1_2;
+PImage greybox_1_2_zd;
+PImage greybox_2_2;
 
 // flags
 boolean show_zdepth;
@@ -131,6 +124,9 @@ void setup()
   
   loy_mech_01_lo    = loadImage("loy_mech_01_lo.png");
   loy_mech_01_lo_zd = loadImage("loy_mech_01_lo_zd.png");
+  greybox_1_2       = loadImage("greybox_1_2.png");
+  greybox_1_2_zd    = loadImage("greybox_1_2_zd.png");
+  greybox_2_2       = loadImage("greybox_2_2.png");
   
   initObjectsFromJSON("objects.json");
   //println(X_UNIT);
@@ -179,7 +175,9 @@ void draw()
   zd.clear();
   
   PImage current_sprite = show_zdepth ? loy_mech_01_lo_zd : loy_mech_01_lo;
-  fb.addSprite(current_sprite, round(320 / PIXEL_SCALE - current_sprite.width / 2), round(360 / PIXEL_SCALE - current_sprite.height));
+  //PImage current_sprite = show_zdepth ? greybox_1_2_zd : greybox_1_2;
+  fb.addSprite(loy_mech_01_lo,    round(320 / PIXEL_SCALE - loy_mech_01_lo.width / 2),    round(360 / PIXEL_SCALE - loy_mech_01_lo.height));
+  zd.addSprite(loy_mech_01_lo_zd, round(320 / PIXEL_SCALE - loy_mech_01_lo_zd.width / 2), round(360 / PIXEL_SCALE - loy_mech_01_lo_zd.height));
   
   drawPoint(new PVector(0, 0, 0));
   int size = 20;

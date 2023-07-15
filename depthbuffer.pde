@@ -48,6 +48,26 @@ class DepthBuffer {
     }
   }
   
+  void addSprite(PImage sp, int x_pos, int y_pos)
+  {
+    loadPixels();
+    for (int y = 0; y < sp.height; ++y) {
+      for (int x = 0; x < sp.width; ++x) {
+        if (((sp.pixels[x + sp.width * y] >> 16) & 0xFF) > 0) {
+          if (
+            x + x_pos >= 0 &&
+            x + x_pos <  w &&
+            y + y_pos >= 0 &&
+            y + y_pos <  h
+          ) {
+            frame[y + y_pos][x + x_pos] = (sp.pixels[x + sp.width * y] & 0xFF00) >> 8;
+          }
+        }
+      }
+    }
+    updatePixels();
+  }
+  
   void draw()
   {
     float range = max - min;
