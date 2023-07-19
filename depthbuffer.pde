@@ -48,8 +48,10 @@ class DepthBuffer {
     }
   }
   
-  void addSprite(PImage sp, int x_pos, int y_pos)
+  void addSprite(PImage sp, int x_pos, int y_pos, int depth_offset)
   {
+    float bottom_edge = y_pos + sp.height;
+    float bottom_edge_depth = distanceFromCameraPlane(screenToWorld(new PVector(x_pos * PIXEL_SCALE, bottom_edge * PIXEL_SCALE)));
     loadPixels();
     for (int y = 0; y < sp.height; ++y) {
       for (int x = 0; x < sp.width; ++x) {
@@ -60,7 +62,10 @@ class DepthBuffer {
             y + y_pos >= 0 &&
             y + y_pos <  h
           ) {
-            frame[y + y_pos][x + x_pos] = (sp.pixels[x + sp.width * y] & 0xFF00) >> 8;
+             float depth = bottom_edge_depth + K * (depth_offset - ((sp.pixels[x + sp.width * y] & 0xFF00) >> 8));
+             min = min(depth, min);
+             max = max(depth, max);
+             frame[y + y_pos][x + x_pos] = depth;
           }
         }
       }

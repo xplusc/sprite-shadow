@@ -11,7 +11,7 @@ final int   SCREEN_HEIGHT       = 480;     // pixels
 //final float WORLD_WIDTH         = 400;     // world units
 //final float WORLD_HEIGHT        = 300;     // world units
 //final float WORLD_TO_SCREEN     = SCREEN_WIDTH / WORLD_WIDTH;
-final float PIXEL_SCALE         = 3;       // screen pixels per framebuffer pixel
+final float PIXEL_SCALE         = 4;       // screen pixels per framebuffer pixel
 
 final float CAMERA_ANGLE_OF_ALTITUDE = 30 * PI / 180; // radians, 30 degrees
 final float X_DOT_X  =  sqrt(2) / 2;
@@ -28,6 +28,8 @@ final PVector C_UNIT = new PVector                      // unit vector in the di
   -sin(CAMERA_ANGLE_OF_ALTITUDE),
   (sqrt(2) / 2) * cos(CAMERA_ANGLE_OF_ALTITUDE)
 );
+
+final float K = 2.375 * PIXEL_SCALE;
 
 /* ----- FUNCS ----- */
 
@@ -103,8 +105,14 @@ PImage greybox_1_2;
 PImage greybox_1_2_zd;
 PImage greybox_2_2;
 
+// put in JSON eventually
+final int loy_mech_01_lo_zd_offset = 150;
+final int loy_mech_01_up_zd_offset = 152;
+final int greybox_1_2_zd_offset    = 161;
+
 // flags
 boolean show_zdepth;
+boolean greybox;
 boolean debug;
 
 void settings()
@@ -146,6 +154,7 @@ void setup()
   
   // initialize flags
   show_zdepth = false;
+  greybox = false;
   debug = false;
 }
 
@@ -161,6 +170,8 @@ void keyPressed()
     switch (key) {
       case 'z':
       case 'Z': show_zdepth = !show_zdepth; break;
+      case 'g':
+      case 'G': greybox = !greybox; break;
       default: break;
     }
   }
@@ -174,12 +185,14 @@ void draw()
   fb.clear();
   zd.clear();
   
-  PImage current_sprite = show_zdepth ? loy_mech_01_lo_zd : loy_mech_01_lo;
-  //PImage current_sprite = show_zdepth ? greybox_1_2_zd : greybox_1_2;
-  fb.addSprite(loy_mech_01_lo,    round(320 / PIXEL_SCALE - loy_mech_01_lo.width / 2),    round(360 / PIXEL_SCALE - loy_mech_01_lo.height));
-  zd.addSprite(loy_mech_01_lo_zd, round(320 / PIXEL_SCALE - loy_mech_01_lo_zd.width / 2), round(360 / PIXEL_SCALE - loy_mech_01_lo_zd.height));
+  PImage current_sprite = greybox ? greybox_1_2 : loy_mech_01_lo;
+  PImage current_zd     = greybox ? greybox_1_2_zd : loy_mech_01_lo_zd;
+  int current_zd_offset = greybox ? greybox_1_2_zd_offset : loy_mech_01_lo_zd_offset;
   
-  drawPoint(new PVector(0, 0, 0));
+  fb.addSprite(current_sprite, round(320 / PIXEL_SCALE - current_sprite.width / 2), round(360 / PIXEL_SCALE - current_sprite.height));
+  zd.addSprite(current_zd,     round(320 / PIXEL_SCALE - current_zd.width / 2),     round(360 / PIXEL_SCALE - current_zd.height), current_zd_offset);
+  
+  /*drawPoint(new PVector(0, 0, 0));
   int size = 20;
   for (int i = 1; i <= size; ++i) {
     drawPoint(new PVector(10 * i, 0, 0));
@@ -195,7 +208,7 @@ void draw()
     drawPoint(new PVector(10 * size, 10 * i, 10 * size));
     drawPoint(new PVector(10 * size, 10 * size, 10 * i));
     if (show_zdepth) { debug = false; }
-  }
+  }*/
   
   if (show_zdepth) {
     zd.draw();
