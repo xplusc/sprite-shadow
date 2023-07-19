@@ -62,10 +62,14 @@ class DepthBuffer {
             y + y_pos >= 0 &&
             y + y_pos <  h
           ) {
-             float depth = bottom_edge_depth + K * (depth_offset - ((sp.pixels[x + sp.width * y] & 0xFF00) >> 8));
-             min = min(depth, min);
-             max = max(depth, max);
-             frame[y + y_pos][x + x_pos] = depth;
+            //if (x == 48 && y == 106) {
+            //  print("(" + x + ", " + y + "), " + (depth_offset - ((sp.pixels[x + sp.width * y] & 0xFF00) >> 8)) + ", "); // run
+            //  println(frame[y + y_pos][x + x_pos]); // rise
+            //}
+            float depth = bottom_edge_depth + K * (depth_offset - ((sp.pixels[x + sp.width * y] & 0xFF00) >> 8));
+            min = min(depth, min);
+            max = max(depth, max);
+            frame[y + y_pos][x + x_pos] = depth;
           }
         }
       }

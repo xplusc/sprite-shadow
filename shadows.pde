@@ -29,7 +29,7 @@ final PVector C_UNIT = new PVector                      // unit vector in the di
   (sqrt(2) / 2) * cos(CAMERA_ANGLE_OF_ALTITUDE)
 );
 
-final float K = 2.375 * PIXEL_SCALE;
+final float K = 2.4452237 * PIXEL_SCALE;
 
 /* ----- FUNCS ----- */
 
