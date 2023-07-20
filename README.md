@@ -1,2 +1,2 @@
 # sprite-shadow
-Reverse-engineering the lighting and shadows as seen in the game Brigador.
+Reverse-engineering the dynamic lighting and shadows of 2D isometric sprites as seen in the video game Brigador.
