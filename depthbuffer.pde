@@ -46,14 +46,14 @@ class DepthBuffer {
     }
   }
   
-  void addSprite(PImage sp, int x_pos, int y_pos, int depth_offset)
+  void addImage(PImage i, int x_pos, int y_pos, int depth_offset)
   {
-    float bottom_edge = y_pos + sp.height;
+    float bottom_edge = y_pos + i.height;
     float bottom_edge_depth = distanceFromCameraPlane(screenToWorld(new PVector(x_pos * PIXEL_SCALE, bottom_edge * PIXEL_SCALE)));
     loadPixels();
-    for (int y = 0; y < sp.height; ++y) {
-      for (int x = 0; x < sp.width; ++x) {
-        if (((sp.pixels[x + sp.width * y] >> 16) & 0xFF) > 0) {
+    for (int y = 0; y < i.height; ++y) {
+      for (int x = 0; x < i.width; ++x) {
+        if (((i.pixels[x + i.width * y] >> 8) & 0xFF) > 0) {
           if (
             x + x_pos >= 0 &&
             x + x_pos <  w &&
@@ -64,7 +64,7 @@ class DepthBuffer {
             //  print("(" + x + ", " + y + "), " + (depth_offset - ((sp.pixels[x + sp.width * y] & 0xFF00) >> 8)) + ", "); // run
             //  println(frame[y + y_pos][x + x_pos]); // rise
             //}
-            float depth = bottom_edge_depth + K * (depth_offset - ((sp.pixels[x + sp.width * y] & 0xFF00) >> 8));
+            float depth = bottom_edge_depth + K * (depth_offset - (i.pixels[x + i.width * y] & 0xFF));
             min = min(depth, min);
             max = max(depth, max);
             frame[y + y_pos][x + x_pos] = depth;

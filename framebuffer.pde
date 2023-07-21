@@ -43,25 +43,25 @@ class FrameBuffer {
     }
   }
   
-  void addSprite(PImage sp, int x_pos, int y_pos)
+  void addImage(PImage i, int x_pos, int y_pos)
   {
     loadPixels();
-    for (int y = 0; y < sp.height; ++y) {
-      for (int x = 0; x < sp.width; ++x) {
+    for (int y = 0; y < i.height; ++y) {
+      for (int x = 0; x < i.width; ++x) {
         //println();
         //println(sp.width);
         //println(sp.height);
         //println(sp_x);
         //println(sp_y);
         //println(sp_x + sp.width * sp_y);
-        if ((sp.pixels[x + sp.width * y] & 0x000000FF) > 0) {
+        if ((i.pixels[x + i.width * y] & 0x000000FF) > 0) {
           if (
             x + x_pos >= 0 &&
             x + x_pos <  w &&
             y + y_pos >= 0 &&
             y + y_pos <  h
           ) {
-            frame[y + y_pos][x + x_pos] = sp.pixels[x + sp.width * y];
+            frame[y + y_pos][x + x_pos] = i.pixels[x + i.width * y];
           }
         }
       }

@@ -15,7 +15,7 @@ final int   SCREEN_HEIGHT       = 480;     // pixels
 //final float WORLD_WIDTH         = 400;     // world units
 //final float WORLD_HEIGHT        = 300;     // world units
 //final float WORLD_TO_SCREEN     = SCREEN_WIDTH / WORLD_WIDTH;
-final float PIXEL_SCALE         = 0.5;       // screen pixels per framebuffer pixel
+final float PIXEL_SCALE         = 4;       // screen pixels per framebuffer pixel
 
 final float CAMERA_ANGLE_OF_ALTITUDE = 30 * PI / 180;   // radians, 30 degrees
 final float X_DOT_X  =  sqrt(2) / 2;
@@ -116,8 +116,60 @@ void drawPoint(PVector wc)
 {
   float d = distanceFromCameraPlane(wc); // wu
   PVector fc = pv_scale(worldToScreen(wc), 1 / PIXEL_SCALE); // frame coordinate
-  zd.setPixel(fc, d);
-  fb.setPixel(fc, color(255));
+  if (
+    fc.x >= 0    &&
+    fc.x <  fb.w &&
+    fc.y >= 0    &&
+    fc.y <  fb.h
+  ) {
+    zd.setPixel(fc, d);
+    fb.setPixel(fc, color(255));
+  }
+}
+
+void addSprite(Sprite sp, PVector wc, PVector tl)
+{
+  float bottom_edge_depth = distanceFromCameraPlane(wc);
+  loadPixels();
+  for (int y = 0; y < sp.h; ++y) {
+    for (int x = 0; x < sp.w; ++x) {
+      if (
+        x + tl.x >= 0    && // if pixel is in view
+        x + tl.x <  zd.w &&
+        y + tl.y >= 0    &&
+        y + tl.y <  zd.h
+      ) {
+        if (((sp.zd_data.pixels[x + sp.w * y] >> 8) & 0xFF) > 0) { // if zdepth data exists for this pixel (not a transparent pixel)
+          float depth = bottom_edge_depth + K * (sp.zd_offset - (sp.zd_data.pixels[x + sp.w * y] & 0xFF));
+          if (zd.frame[y + (int) tl.y][x + (int) tl.x] <= depth) // is this pixel occluded?
+            continue;
+          if ((sp.data.pixels[x + sp.w * y] & 0xFF000000) == 0)  // is this pixel transparent?
+            continue;
+          zd.frame[y + (int) tl.y][x + (int) tl.x] = depth;      // update depth buffer
+          zd.min = min(depth, zd.min);
+          zd.max = max(depth, zd.max);
+          fb.frame[y + (int) tl.y][x + (int) tl.x] = sp.data.pixels[x + sp.w * y]; // add sprite color to frame buffer
+        }
+      }
+    }
+  }
+  updatePixels();
+}
+
+void addProp(Prop p)
+{
+  Sprite sp = sprite_map.get(p.sprite_name);
+  PVector fc = pv_scale(worldToScreen(p.pos), 1 / PIXEL_SCALE); // frame coordinate of this prop's position
+  PVector tl = PVector.add(fc, new PVector(-sp.w / 2, -sp.h));  // top-left frame coordinate of this prop's sprite
+  tl = new PVector(floor(tl.x), floor(tl.y));                   // align to frame buffer grid
+  if (
+    tl.x + sp.w >= 0    && // check if any part of the sprite is in view
+    tl.x        <  fb.w &&
+    tl.y + sp.h >= 0    &&
+    tl.y        <  fb.h
+  ) {
+    addSprite(sp, p.pos, tl);
+  }
 }
 
 /* ----- SETUP ----- */
@@ -128,6 +180,9 @@ FrameBuffer fb;
 DepthBuffer zd;
 ArrayList<Sprite> sprites;
 HashMap<String, Sprite> sprite_map;
+
+Prop touro_legs;
+Prop box;
 
 // flags
 boolean show_zdepth;
@@ -165,6 +220,9 @@ void setup()
   //println(fb.w * fb.h);
   //println(SCREEN_WIDTH * SCREEN_HEIGHT);
   
+  touro_legs = new Prop("loy_mech_01_lo", new PVector(0, 0, 0));
+  box        = new Prop("greybox_1_2",    new PVector(0, 0, 0));
+  
   // initialize flags
   show_zdepth = false;
   greybox = false;
@@ -198,10 +256,10 @@ void draw()
   fb.clear();
   zd.clear();
   
-  Sprite current_sprite = greybox ? sprite_map.get("greybox_1_2") : sprite_map.get("loy_mech_01_lo");
-  
-  fb.addSprite(current_sprite.data,    round(320 / PIXEL_SCALE - current_sprite.w / 2), round(360 / PIXEL_SCALE - current_sprite.h));
-  zd.addSprite(current_sprite.zd_data, round(320 / PIXEL_SCALE - current_sprite.w / 2), round(360 / PIXEL_SCALE - current_sprite.h), current_sprite.zd_offset);
+  Prop current_prop = greybox ? box : touro_legs;
+  //Sprite current_sprite = sprite_map.get(current_prop.sprite_name);
+  addProp(current_prop);
+  //addSprite(current_sprite, new PVector(0, 0, 0), new PVector(270, 290));
   
   /*drawPoint(new PVector(0, 0, 0));
   int size = 20;
