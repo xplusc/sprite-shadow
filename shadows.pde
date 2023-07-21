@@ -15,7 +15,7 @@ final int   SCREEN_HEIGHT       = 480;     // pixels
 //final float WORLD_WIDTH         = 400;     // world units
 //final float WORLD_HEIGHT        = 300;     // world units
 //final float WORLD_TO_SCREEN     = SCREEN_WIDTH / WORLD_WIDTH;
-final float PIXEL_SCALE         = 4;       // screen pixels per framebuffer pixel
+final float PIXEL_SCALE         = 0.5;       // screen pixels per framebuffer pixel
 
 final float CAMERA_ANGLE_OF_ALTITUDE = 30 * PI / 180;   // radians, 30 degrees
 final float X_DOT_X  =  sqrt(2) / 2;
@@ -58,7 +58,7 @@ void initObjectsFromJSON(String path)
     PImage pi = loadImage(jpath);
     PImage zd = loadImage(jzd_path);
     Sprite sp = new Sprite(pi, zd, jname, jzd_offset);
-    sprites.add(sp);
+    //sprites.add(sp); // until needed
     
     // Sprite data also goes into a map from names -> Sprites
     sprite_map.put(jname, sp);
@@ -148,12 +148,6 @@ void setup()
   
   fb = new FrameBuffer();
   zd = new DepthBuffer();
-  
-  //loy_mech_01_lo    = loadImage("loy_mech_01_lo.png");
-  //loy_mech_01_lo_zd = loadImage("loy_mech_01_lo_zd.png");
-  //greybox_1_2       = loadImage("greybox_1_2.png");
-  //greybox_1_2_zd    = loadImage("greybox_1_2_zd.png");
-  //greybox_2_2       = loadImage("greybox_2_2.png");
   
   initObjectsFromJSON("data/sprites.json");
   //println(X_UNIT);
