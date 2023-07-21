@@ -1,7 +1,11 @@
+import java.util.Map;
+
 /**
  * DEFINITIONS
- * WORLD UNIT (wu) - 300 WIDE, 400 HIGH
- * PIXEL (p)       - CHECK SCREEN RESOLUTION
+ * WORLD UNIT (wu)  - 3D coordinate
+ * SCREEN UNIT (su) - 2D screen coordinate
+ * FRAME UNIT (fu)  - su / PIXEL_SCALE
+ * PIXEL (p)        - CHECK SCREEN RESOLUTION
  */
 
 final float TIME_DELTA          =  16.667; // ms (per frame?)
@@ -13,12 +17,12 @@ final int   SCREEN_HEIGHT       = 480;     // pixels
 //final float WORLD_TO_SCREEN     = SCREEN_WIDTH / WORLD_WIDTH;
 final float PIXEL_SCALE         = 4;       // screen pixels per framebuffer pixel
 
-final float CAMERA_ANGLE_OF_ALTITUDE = 30 * PI / 180; // radians, 30 degrees
+final float CAMERA_ANGLE_OF_ALTITUDE = 30 * PI / 180;   // radians, 30 degrees
 final float X_DOT_X  =  sqrt(2) / 2;
 final float X_DOT_Y  = (sqrt(2) / 2) * sin(CAMERA_ANGLE_OF_ALTITUDE);
 final float Y_DOT_X  = 0;
 final float Y_DOT_Y  = cos(CAMERA_ANGLE_OF_ALTITUDE);
-final PVector ORIGIN = new PVector(SCREEN_WIDTH / 2, 3 * SCREEN_HEIGHT / 4); // where (0, 0, 0) is on the screen
+final PVector ORIGIN = new PVector(SCREEN_WIDTH / 2, 3 * SCREEN_HEIGHT / 4); // where (0, 0, 0) is on the screen, wu
 final PVector X_UNIT = new PVector(-X_DOT_X, -X_DOT_Y); // for transforming world coordinates
 final PVector Z_UNIT = new PVector( X_DOT_X, -X_DOT_Y); // onto the screen
 final PVector Y_UNIT = new PVector( Y_DOT_X, -Y_DOT_Y);
@@ -33,9 +37,32 @@ final float K = 2.4452237 * PIXEL_SCALE;
 
 /* ----- FUNCS ----- */
 
+/*
+ * Take the JSON file pointed to by <path> and initialize important
+ * global variables (e.g. <sprites>) with the data contained within.
+ */
 void initObjectsFromJSON(String path)
 {
-  // TODO
+  sprites = new ArrayList<Sprite>();
+  sprite_map = new HashMap<String, Sprite>();
+  
+  json = loadJSONObject(path);
+  JSONArray jsprites = json.getJSONArray("sprites");
+  for (int i = 0; i < jsprites.size(); ++i) {
+    JSONObject jsprite = jsprites.getJSONObject(i);
+    String jpath       = jsprite.getString("path");
+    String jzd_path    = jsprite.getString("zd_path");
+    String jname       = jsprite.getString("name");
+    int jzd_offset     = jsprite.getInt("zd_offset");
+    
+    PImage pi = loadImage(jpath);
+    PImage zd = loadImage(jzd_path);
+    Sprite sp = new Sprite(pi, zd, jname, jzd_offset);
+    sprites.add(sp);
+    
+    // Sprite data also goes into a map from names -> Sprites
+    sprite_map.put(jname, sp);
+  }
 }
 
 PVector pv_scale(PVector p, float s)
@@ -56,18 +83,18 @@ PVector screenToWorld(PVector sc)
 {
   sc = PVector.sub(sc, ORIGIN); // shift sc so the origin is back at (0, 0)
   //println("sc: ", sc);
-  float x_dot  = sc.x * X_UNIT.x + sc.y * X_UNIT.y;
-  float z_dot  = sc.x * Z_UNIT.x + sc.y * Z_UNIT.y;
+  float x_dot  = PVector.dot(sc, X_UNIT);
+  float z_dot  = PVector.dot(sc, Z_UNIT);
   float sc_mag = sc.mag();
-  float xz_mag = X_UNIT.mag(); // X_UNIT and Z_UNIT have the same magnitude
-  float m      = X_UNIT.y / X_UNIT.x; // slope of the x and z-axis lines
-  float x_ht   =  m * sc.x; // height (y coord) of x-axis at sc.x
-  float z_ht   = -m * sc.x; // height (y coord) of z-axis at sc.x
-  float sign_x = sc.y > z_ht ? -1 : 1; // choice of sign depends on sc being
-  float sign_z = sc.y > x_ht ? -1 : 1; // above or below the x or z-axis
+  float xz_mag = X_UNIT.mag();                             // X_UNIT and Z_UNIT have the same magnitude
+  float m      = X_UNIT.y / X_UNIT.x;                      // slope of the x and z-axis lines
+  float x_ht   =  m * sc.x;                                // height (y coord) of x-axis at sc.x
+  float z_ht   = -m * sc.x;                                // height (y coord) of z-axis at sc.x
+  float sign_x = sc.y > z_ht ? -1 : 1;                     // choice of sign depends on sc being
+  float sign_z = sc.y > x_ht ? -1 : 1;                     // above or below the x or z-axis
   float a      = acos(sign_x * x_dot / (sc_mag * xz_mag)); // a is angle from sc to x-axis
   float b      = acos(sign_z * z_dot / (sc_mag * xz_mag)); // b is angle from sc to z-axis
-  a = Float.isNaN(a) ? 0 : a; // check if directly on axes
+  a = Float.isNaN(a) ? 0 : a;                              // check if directly on axes
   b = Float.isNaN(b) ? 0 : b;
   float c      = PI - a - b;
   //println("a: ", a);
@@ -99,16 +126,8 @@ JSONObject json;
 
 FrameBuffer fb;
 DepthBuffer zd;
-PImage loy_mech_01_lo;
-PImage loy_mech_01_lo_zd;
-PImage greybox_1_2;
-PImage greybox_1_2_zd;
-PImage greybox_2_2;
-
-// put in JSON eventually
-final int loy_mech_01_lo_zd_offset = 150;
-final int loy_mech_01_up_zd_offset = 152;
-final int greybox_1_2_zd_offset    = 161;
+ArrayList<Sprite> sprites;
+HashMap<String, Sprite> sprite_map;
 
 // flags
 boolean show_zdepth;
@@ -130,13 +149,13 @@ void setup()
   fb = new FrameBuffer();
   zd = new DepthBuffer();
   
-  loy_mech_01_lo    = loadImage("loy_mech_01_lo.png");
-  loy_mech_01_lo_zd = loadImage("loy_mech_01_lo_zd.png");
-  greybox_1_2       = loadImage("greybox_1_2.png");
-  greybox_1_2_zd    = loadImage("greybox_1_2_zd.png");
-  greybox_2_2       = loadImage("greybox_2_2.png");
+  //loy_mech_01_lo    = loadImage("loy_mech_01_lo.png");
+  //loy_mech_01_lo_zd = loadImage("loy_mech_01_lo_zd.png");
+  //greybox_1_2       = loadImage("greybox_1_2.png");
+  //greybox_1_2_zd    = loadImage("greybox_1_2_zd.png");
+  //greybox_2_2       = loadImage("greybox_2_2.png");
   
-  initObjectsFromJSON("objects.json");
+  initObjectsFromJSON("data/sprites.json");
   //println(X_UNIT);
   //println(Y_UNIT);
   //println(Z_UNIT);
@@ -185,12 +204,10 @@ void draw()
   fb.clear();
   zd.clear();
   
-  PImage current_sprite = greybox ? greybox_1_2 : loy_mech_01_lo;
-  PImage current_zd     = greybox ? greybox_1_2_zd : loy_mech_01_lo_zd;
-  int current_zd_offset = greybox ? greybox_1_2_zd_offset : loy_mech_01_lo_zd_offset;
+  Sprite current_sprite = greybox ? sprite_map.get("greybox_1_2") : sprite_map.get("loy_mech_01_lo");
   
-  fb.addSprite(current_sprite, round(320 / PIXEL_SCALE - current_sprite.width / 2), round(360 / PIXEL_SCALE - current_sprite.height));
-  zd.addSprite(current_zd,     round(320 / PIXEL_SCALE - current_zd.width / 2),     round(360 / PIXEL_SCALE - current_zd.height), current_zd_offset);
+  fb.addSprite(current_sprite.data,    round(320 / PIXEL_SCALE - current_sprite.w / 2), round(360 / PIXEL_SCALE - current_sprite.h));
+  zd.addSprite(current_sprite.zd_data, round(320 / PIXEL_SCALE - current_sprite.w / 2), round(360 / PIXEL_SCALE - current_sprite.h), current_sprite.zd_offset);
   
   /*drawPoint(new PVector(0, 0, 0));
   int size = 20;
