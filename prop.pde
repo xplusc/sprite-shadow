@@ -1,6 +1,6 @@
 class Prop {
   String sprite_name;
-  PVector pos; // wu
+  PVector pos; // wc
   
   Prop (String sprite, PVector p)
   {

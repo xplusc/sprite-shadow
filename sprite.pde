@@ -3,7 +3,7 @@ class Sprite {
   PImage zd_data;
   String name;
   int zd_offset;
-  int w, h;
+  int w, h;       // gu
   
   Sprite(PImage pi, PImage zd, String n, int off)
   {
