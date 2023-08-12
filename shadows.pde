@@ -197,6 +197,7 @@ void addSprite(Sprite sp, PVector tl, float d)
   //println("camera.tl: " + camera.tl);
   //println("camera.z:  " + camera.z);
   //println("tl:        " + tl);
+  
   // find all bounds for the loops
   PVector start_gc = new PVector( // top-left of the area that will be drawn, gc
     max(tl.x, camera.tl.x),
@@ -206,10 +207,10 @@ void addSprite(Sprite sp, PVector tl, float d)
     min(tl.x + sp.w, camera.tl.x + camera.w),
     min(tl.y + sp.h, camera.tl.y + camera.h)
   );
-  PVector start_sc = pv_max(gridToScreen(start_gc), new PVector(0, 0));
-  PVector end_sc   = pv_min(gridToScreen(end_gc),   new PVector(SCREEN_WIDTH, SCREEN_HEIGHT));
-  PVector start_sp = pv_max(PVector.sub(start_gc, tl), camera.tl);
-  PVector end_sp   = pv_min(PVector.sub(end_gc,   tl), new PVector(camera.tl.x + camera.w, camera.tl.y + camera.h));
+  PVector start_sc = pv_max(gridToScreen(start_gc), new PVector(0, 0)); // top-left of the area that will be drawn, sc
+  PVector end_sc   = pv_min(gridToScreen(end_gc),   new PVector(SCREEN_WIDTH, SCREEN_HEIGHT)); // bottom-right, sc
+  PVector start_sp = PVector.sub(start_gc, tl); // top-left of the sprite data that will be pulled, gc
+  PVector end_sp   = PVector.sub(end_gc,   tl); // bottom-right, gc
   float drawn_w  = end_sc.x - start_sc.x; // drawn means the area on the screen where the sprite gets drawn
   float drawn_h  = end_sc.y - start_sc.y;
   float picked_w = end_sp.x - start_sp.x; // picked means the area from the sprite that is 
@@ -230,7 +231,7 @@ void addSprite(Sprite sp, PVector tl, float d)
     for (int sc_x = (int) start_sc.x; sc_x < (int) end_sc.x; ++sc_x) {
       float t_x = (sc_x - start_sc.x) / drawn_w;
       float t_y = (sc_y - start_sc.y) / drawn_h;
-      t_x = clamp(t_x, 0, 1); // wish I could get rid of these
+      t_x = clamp(t_x, 0, 1); // wish I could get rid of these (maybe I can?)
       t_y = clamp(t_y, 0, 1);
       int sp_x = (int) (start_sp.x + t_x * picked_w);
       int sp_y = (int) (start_sp.y + t_y * picked_h);
@@ -253,32 +254,6 @@ void addSprite(Sprite sp, PVector tl, float d)
     }
   }
   updatePixels();
-  
-  //loadPixels();
-  //for (int y = 0; y < sp.h; ++y) {
-  //  for (int x = 0; x < sp.w; ++x) {
-  //    if (
-  //      camera.inView(x + tl.x, y + tl.y)
-  //    ) {
-  //      int zd_value = sp.zd_data.pixels[x + sp.w * y] & 0xFF;
-  //      if (zd_value > 0) { // if zdepth data exists for this pixel (not a transparent pixel)
-  //        println("(x, y): (" + x + ", " + y + ")");
-  //        println("tl: " + tl);
-  //        float depth = d + K * (sp.zd_offset - zd_value);
-  //        PVector sc  = gridToScreen(new PVector(x + tl.x, y + tl.y));
-  //        if (zd.frame[(int) sc.y][(int) sc.x] <= depth) // is this pixel occluded?
-  //          continue;
-  //        if ((sp.data.pixels[x + sp.w * y] & 0xFF000000) == 0)  // is this pixel transparent?
-  //          continue;
-  //        zd.frame[y + (int) tl.y][x + (int) tl.x] = depth;      // update depth buffer
-  //        zd.min = min(depth, zd.min);
-  //        zd.max = max(depth, zd.max);
-  //        fb.frame[y + (int) tl.y][x + (int) tl.x] = sp.data.pixels[x + sp.w * y]; // add sprite color to frame buffer
-  //      }
-  //    }
-  //  }
-  //}
-  //updatePixels();
 }
 
 /**
@@ -335,7 +310,7 @@ void setup()
   
   fb = new FrameBuffer();
   zd = new DepthBuffer();
-  camera = new Camera(new PVector(0, 0), 1);
+  camera = new Camera(new PVector(-300, 0), 1);
   
   initObjectsFromJSON("data/sprites.json");
   //println(X_UNIT);
@@ -373,10 +348,10 @@ void keyPressed()
     }
   } else {
     switch (key) {
-      case 'w': camera.moveCamera(new PVector( 0, -1)); break;
-      case 'a': camera.moveCamera(new PVector(-1,  0)); break;
-      case 's': camera.moveCamera(new PVector( 0,  1)); break;
-      case 'd': camera.moveCamera(new PVector( 1,  0)); break;
+      case 'w': camera.moveCamera(new PVector( 0, -3)); break;
+      case 'a': camera.moveCamera(new PVector(-3,  0)); break;
+      case 's': camera.moveCamera(new PVector( 0,  3)); break;
+      case 'd': camera.moveCamera(new PVector( 3,  0)); break;
       case '=': camera.setZoom(camera.z * 1.25); break;
       case '-': camera.setZoom(camera.z * 0.8); break;
       case 'z': zdepth = !zdepth; break;
