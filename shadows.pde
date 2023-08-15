@@ -155,8 +155,8 @@ PVector gridToScreen(PVector gc)
 PVector screenToGrid(PVector sc)
 {
   PVector gc = new PVector();
-  gc = pv_scale(gc, 1 / camera.z);
-  gc = PVector.add(sc, camera.tl);
+  gc = pv_scale(sc, 1 / camera.z);
+  gc = PVector.add(gc, camera.tl);
   return gc;
 }
 
@@ -310,7 +310,7 @@ void setup()
   
   fb = new FrameBuffer();
   zd = new DepthBuffer();
-  camera = new Camera(new PVector(-300, 0), 1);
+  camera = new Camera(new PVector(0, 0), 1);
   
   initObjectsFromJSON("data/sprites.json");
   //println(X_UNIT);
@@ -352,8 +352,8 @@ void keyPressed()
       case 'a': camera.moveCamera(new PVector(-3,  0)); break;
       case 's': camera.moveCamera(new PVector( 0,  3)); break;
       case 'd': camera.moveCamera(new PVector( 3,  0)); break;
-      case '=': camera.setZoom(camera.z * 1.25); break;
-      case '-': camera.setZoom(camera.z * 0.8); break;
+      case '=': camera.setZoom(camera.z * 2); break;
+      case '-': camera.setZoom(camera.z * 0.5); break;
       case 'z': zdepth = !zdepth; break;
       case 'g': greybox = !greybox; break;
       default: break;
@@ -367,7 +367,7 @@ void draw()
 {
   //background(0);
   fb.clear();
-  zd.clear(camera);
+  zd.clear();
   
   if (greybox) {
     addProp(box);

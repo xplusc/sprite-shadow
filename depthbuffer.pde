@@ -15,10 +15,10 @@ class DepthBuffer {
     max = -INF;
   }
   
-  void clear(Camera c)
+  void clear()
   {
-    min = distanceFromCameraPlane(gridToWorld(screenToGrid(new PVector(0, c.tl.y + c.h - 1)))); // x-value doesn't matter
-    max = distanceFromCameraPlane(gridToWorld(screenToGrid(new PVector(0, c.tl.y))));
+    min = distanceFromCameraPlane(gridToWorld(screenToGrid(new PVector(0, SCREEN_HEIGHT - 1)))); // x-value doesn't matter
+    max = distanceFromCameraPlane(gridToWorld(screenToGrid(new PVector(0, 0))));
     for (int y = 0; y < h; ++y) {
       for (int x = 0; x < w; ++x) {
         float depth = max - ((float) y / (h - 1)) * (max - min);
