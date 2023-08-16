@@ -1,26 +1,30 @@
-{ "sprites": [
 {
-	"path": "sprites/loy_mech_01_lo.png",
-	"zd_path": "sprites/loy_mech_01_lo_zd.png",
-	"name": "loy_mech_01_lo",
-	"zd_offset": 150
-},
-{
-	"path": "sprites/loy_mech_01_up.png",
-	"zd_path": "sprites/loy_mech_01_up_zd.png",
-	"name": "loy_mech_01_up",
-	"zd_offset": 152
-},
-{
-	"path": "sprites/greybox_1_2.png",
-	"zd_path": "sprites/greybox_1_2_zd.png",
-	"name": "greybox_1_2",
-	"zd_offset": 161
-},
-{
-	"path": "sprites/greybox_2_2.png",
-	"zd_path": "sprites/greybox_1_2_zd.png",
-	"name": "greybox_2_2",
-	"zd_offset": 161
+"archetype": "SPRITES",
+"sprites":
+[
+	{
+		"path": "sprites/loy_mech_01_lo.png",
+		"zd_path": "sprites/loy_mech_01_lo_zd.png",
+		"name": "loy_mech_01_lo",
+		"zd_offset": 150
+	},
+	{
+		"path": "sprites/loy_mech_01_up.png",
+		"zd_path": "sprites/loy_mech_01_up_zd.png",
+		"name": "loy_mech_01_up",
+		"zd_offset": 152
+	},	
+	{	
+		"path": "sprites/greybox_1_2.png",
+		"zd_path": "sprites/greybox_1_2_zd.png",
+		"name": "greybox_1_2",
+		"zd_offset": 161
+	},
+	{
+		"path": "sprites/greybox_2_2.png",
+		"zd_path": "sprites/greybox_1_2_zd.png",
+		"name": "greybox_2_2",
+		"zd_offset": 161
+	}
+]
 }
-]}

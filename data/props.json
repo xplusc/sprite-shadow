@@ -1,0 +1,34 @@
+{
+"archetype": "PROPS",
+"props":
+[
+	{
+		"sprite": "loy_mech_01_lo",
+		"pos": [ 0, 0, 0 ]
+	},
+	{
+		"sprite": "loy_mech_01_up",
+		"pos": [ 0, 58, 0 ]
+	},
+	{
+		"sprite": "greybox_1_2",
+		"pos": [ 136, 0, 136 ]
+	},
+	{
+		"sprite": "greybox_2_2",
+		"pos": [ 136, 0, 68 ]
+	},
+	{
+		"sprite": "greybox_2_2",
+		"pos": [ 68, 0, 136 ]
+	},
+	{
+		"sprite": "greybox_1_2",
+		"pos": [ 136, 0, 0 ]
+	},
+	{
+		"sprite": "greybox_1_2",
+		"pos": [ 0, 0, 136 ]
+	}
+]
+}

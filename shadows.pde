@@ -39,14 +39,30 @@ final float K = 2.4452237;
 
 /**
  * Takes the JSON file pointed to by <path> and initialize important
- * global variables (e.g. <sprites>) with the data contained within.
+ * global variables (e.g. <sprite_map>) with the data contained within.
  */
-void initObjectsFromJSON(String path)
+void initFromJSON(String path)
 {
-  sprites = new ArrayList<Sprite>();
+  json = loadJSONObject(path);
+  String archetype = json.getString("archetype");
+  println("Loading .json with archetype: " + archetype);
+  if (archetype.equals("SPRITES")) {
+    parseSpritesJSON(json);
+  } else if (archetype.equals("PROPS")) {
+    parsePropsJSON(json);
+  } else {
+    println("initFromJSON(): Archetype not found.");
+  }
+}
+
+/**
+ * Parses the data stored in a .json with the archetype "SPRITES" and updates
+ * <sprite_map> accordingly.
+ */
+void parseSpritesJSON(JSONObject json)
+{
   sprite_map = new HashMap<String, Sprite>();
   
-  json = loadJSONObject(path);
   JSONArray jsprites = json.getJSONArray("sprites");
   for (int i = 0; i < jsprites.size(); ++i) {
     JSONObject jsprite = jsprites.getJSONObject(i);
@@ -58,10 +74,33 @@ void initObjectsFromJSON(String path)
     PImage pi = loadImage(jpath);
     PImage zd = loadImage(jzd_path);
     Sprite sp = new Sprite(pi, zd, jname, jzd_offset);
-    //sprites.add(sp); // until needed
     
-    // Sprite data also goes into a map from names -> Sprites
+    // Sprite data goes into a map from names -> Sprites
     sprite_map.put(jname, sp);
+  }
+}
+
+/**
+ * Parses the data stored in a .json with the archetype "PROPS" and updates
+ * <props> accordingly.
+ */
+void parsePropsJSON(JSONObject json)
+{
+  props = new ArrayList<Prop>();
+  
+  JSONArray jprops = json.getJSONArray("props");
+  for (int i = 0; i < jprops.size(); ++i) {
+    JSONObject jprop = jprops.getJSONObject(i);
+    String jsprite     = jprop.getString("sprite");
+    JSONArray jpos     = jprop.getJSONArray("pos");
+    PVector pos        = new PVector(
+      jpos.getFloat(0),
+      jpos.getFloat(1),
+      jpos.getFloat(2)
+    );
+    
+    Prop p = new Prop(jsprite, pos);
+    props.add(p);
   }
 }
 
@@ -283,17 +322,14 @@ JSONObject json;
 
 FrameBuffer fb;
 DepthBuffer zd;
-ArrayList<Sprite> sprites;
+//ArrayList<Sprite> sprites;
 HashMap<String, Sprite> sprite_map;
+ArrayList<Prop> props;
 Camera camera;
-
-Prop touro_legs;
-Prop touro_upper;
-Prop box;
 
 // flags
 boolean zdepth;
-boolean greybox;
+//boolean greybox;
 boolean debug;
 
 void settings()
@@ -312,7 +348,8 @@ void setup()
   zd = new DepthBuffer();
   camera = new Camera(new PVector(0, 0), 1);
   
-  initObjectsFromJSON("data/sprites.json");
+  initFromJSON("data/sprites.json");
+  initFromJSON("data/props.json");
   //println(X_UNIT);
   //println(Y_UNIT);
   //println(Z_UNIT);
@@ -328,13 +365,9 @@ void setup()
   //println(fb.w * fb.h);
   //println(SCREEN_WIDTH * SCREEN_HEIGHT);
   
-  touro_legs  = new Prop("loy_mech_01_lo", new PVector(0, 0, 0));
-  touro_upper = new Prop("loy_mech_01_up", new PVector(0, 58, 0));
-  box         = new Prop("greybox_1_2",    new PVector(0, 0, 0));
-  
   // initialize flags
   zdepth  = false;
-  greybox = false;
+  //greybox = false;
   debug   = false;
 }
 
@@ -348,14 +381,14 @@ void keyPressed()
     }
   } else {
     switch (key) {
-      case 'w': camera.moveCamera(new PVector( 0, -3)); break;
-      case 'a': camera.moveCamera(new PVector(-3,  0)); break;
-      case 's': camera.moveCamera(new PVector( 0,  3)); break;
-      case 'd': camera.moveCamera(new PVector( 3,  0)); break;
+      case 'w': camera.moveCamera(new PVector( 0, -3 / camera.z)); break;
+      case 'a': camera.moveCamera(new PVector(-3 / camera.z,  0)); break;
+      case 's': camera.moveCamera(new PVector( 0,  3 / camera.z)); break;
+      case 'd': camera.moveCamera(new PVector( 3 / camera.z,  0)); break;
       case '=': camera.setZoom(camera.z * 2); break;
       case '-': camera.setZoom(camera.z * 0.5); break;
       case 'z': zdepth = !zdepth; break;
-      case 'g': greybox = !greybox; break;
+      //case 'g': greybox = !greybox; break;
       default: break;
     }
   }
@@ -369,11 +402,8 @@ void draw()
   fb.clear();
   zd.clear();
   
-  if (greybox) {
-    addProp(box);
-  } else {
-    addProp(touro_legs);
-    addProp(touro_upper);
+  for (int i = 0; i < props.size(); ++i) {
+    addProp(props.get(i));
   }
   
   /*drawPoint(new PVector(0, 0, 0));
