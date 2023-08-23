@@ -32,8 +32,6 @@ final PVector C_UNIT = new PVector                      // unit vector in the di
 final float TILE_SIDE_LENGTH = 69;                      // wu per tu
 final float K = 2.4452237;
 
-final color AMBIENT_LIGHT = color(200, 200, 250);
-
 /* ----- FUNCS ----- */
 
 /**
@@ -51,6 +49,8 @@ void initFromJSON(String path)
     parseTilesJSON(json);
   } else if (archetype.equals("PROPS")) {
     parsePropsJSON(json);
+  } else if (archetype.equals("LIGHTING")) {
+    parseLightingJSON(json);
   } else {
     println("initFromJSON(): Archetype not found.");
   }
@@ -89,7 +89,7 @@ void parseSpritesJSON(JSONObject json)
 
 /**
  * Parses the data stored in a .json with the archetype "TILES" and updates
- * <sprite_map> accordingly.
+ * <tiles> accordingly.
  */
 void parseTilesJSON(JSONObject json)
 {
@@ -137,6 +137,19 @@ void parsePropsJSON(JSONObject json)
     Prop p = new Prop(jsprite, pos);
     props.add(p);
   }
+}
+
+/**
+ * Parses the data stored in a .json with the archetype "LIGHTING" and updates
+ * <ambient_light> accordingly.
+ */
+void parseLightingJSON(JSONObject json)
+{
+  // <ambient_light>, color stored as float[3]
+  JSONArray jambient = json.getJSONArray("ambient");
+  ambient_light[0] = jambient.getFloat(0);
+  ambient_light[1] = jambient.getFloat(1);
+  ambient_light[2] = jambient.getFloat(2);
 }
 
 /**
@@ -380,6 +393,7 @@ HashMap<String, Sprite> sprite_map;
 ArrayList<Tile> tiles;
 ArrayList<Prop> props;
 Camera camera;
+float[] ambient_light;
 
 // flags
 boolean zdepth;
@@ -401,11 +415,13 @@ void setup()
   fb = new FrameBuffer();
   zd = new DepthBuffer();
   camera = new Camera(new PVector(0, 0), 1);
+  ambient_light = new float[3];
   
   sprite_map = new HashMap<String, Sprite>();
   initFromJSON("data/sprites.json");
   initFromJSON("data/tiles.json");
   initFromJSON("data/props.json");
+  initFromJSON("data/lighting.json");
   //println(X_UNIT);
   //println(Y_UNIT);
   //println(Z_UNIT);

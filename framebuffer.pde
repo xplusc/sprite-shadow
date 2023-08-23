@@ -79,11 +79,10 @@ class FrameBuffer {
         //print("frame[fb_y][fb_x]: " + frame[fb_y][fb_x] + "\n");
         color albedo    = frame[y][x];
         float[] rgb_alb = {(float) (albedo >> 16 & 0xFF) / 255, (float) (albedo >> 8 & 0xFF) / 255, (float) (albedo & 0xFF) / 255};
-        float[] rgb_amb = {(float) (AMBIENT_LIGHT >> 16 & 0xFF) / 255, (float) (AMBIENT_LIGHT >> 8 & 0xFF) / 255, (float) (AMBIENT_LIGHT & 0xFF) / 255};
         color pixel_color = color(
-          (int) (255 * rgb_alb[0] * rgb_amb[0]),
-          (int) (255 * rgb_alb[1] * rgb_amb[1]),
-          (int) (255 * rgb_alb[2] * rgb_amb[2])
+          (int) (255 * rgb_alb[0] * ambient_light[0]),
+          (int) (255 * rgb_alb[1] * ambient_light[1]),
+          (int) (255 * rgb_alb[2] * ambient_light[2])
         );
         //if ((albedo & 0xFF) > 0) {
         //  println("albedo:  " + albedo);
