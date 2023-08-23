@@ -29,6 +29,14 @@
 	{
 		"sprite": "greybox_1_2",
 		"pos": [ 0, 0, 2 ]
+	},
+	{
+		"sprite": "greybox_2_2",
+		"pos": [ 2, 0,-1 ]
+	},
+	{
+		"sprite": "greybox_2_2",
+		"pos": [-1, 0, 2 ]
 	}
 ]
 }

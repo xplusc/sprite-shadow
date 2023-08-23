@@ -62,7 +62,7 @@ void initFromJSON(String path)
  */
 void parseSpritesJSON(JSONObject json)
 {
-  //sprite_map = new HashMap<String, Sprite>();
+  sprite_map = new HashMap<String, Sprite>();
   
   JSONArray jsprites = json.getJSONArray("sprites");
   for (int i = 0; i < jsprites.size(); ++i) {
@@ -459,6 +459,10 @@ void keyPressed()
       case 'd': camera.moveCamera(new PVector( 3 / camera.z,  0)); break;
       case '=': camera.setZoom(camera.z * 2); break;
       case '-': camera.setZoom(camera.z * 0.5); break;
+      case 'i': initFromJSON("data/sprites.json");  break;
+      case 't': initFromJSON("data/tiles.json");    break;
+      case 'p': initFromJSON("data/props.json");    break;
+      case 'l': initFromJSON("data/lighting.json"); break;
       case 'z': zdepth = !zdepth; break;
       //case 'g': greybox = !greybox; break;
       default: break;
