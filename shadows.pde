@@ -6,23 +6,19 @@ import java.util.Map;
  * GRID UNIT (fu)   - for 2D grid coordinate system, like world coordinates but 2D
  * SCREEN UNIT (su) - for 2D screen coordinate system, screen pixels
  * PIXEL (p)        - can be pixel on screen or in frame buffer
+ * TILE UNIT (tu)   - from one tile to another is one tu
  */
 
 final float TIME_DELTA          =  16.667; // ms per frame
 final float TIME_SCALE          =   1.0;   // 1.0 = normal speed
 final int   SCREEN_WIDTH        = 640;     // pixels //MAKE SURE THE ASPECT RATIO MATCHES WORLD DIMENSIONS
 final int   SCREEN_HEIGHT       = 480;     // pixels
-//final float WORLD_WIDTH         = 400;     // world units
-//final float WORLD_HEIGHT        = 300;     // world units
-//final float WORLD_TO_SCREEN     = SCREEN_WIDTH / WORLD_WIDTH;
-//final float PIXEL_SCALE         = 1;       // screen pixels per framebuffer pixel
 
 final float CAMERA_ANGLE_OF_ALTITUDE = 30 * PI / 180;   // radians, 30 degrees
 final float X_DOT_X  =  sqrt(2) / 2;
 final float X_DOT_Y  = (sqrt(2) / 2) * sin(CAMERA_ANGLE_OF_ALTITUDE);
 final float Y_DOT_X  = 0;
 final float Y_DOT_Y  = cos(CAMERA_ANGLE_OF_ALTITUDE);
-//final PVector ORIGIN = new PVector(SCREEN_WIDTH / 2, 3 * SCREEN_HEIGHT / 4); // where (0, 0, 0) is on the screen, wu
 final PVector X_UNIT = new PVector(-X_DOT_X, -X_DOT_Y); // for transforming world coordinates
 final PVector Z_UNIT = new PVector( X_DOT_X, -X_DOT_Y); // onto the screen
 final PVector Y_UNIT = new PVector( Y_DOT_X, -Y_DOT_Y);
@@ -33,7 +29,10 @@ final PVector C_UNIT = new PVector                      // unit vector in the di
   (sqrt(2) / 2) * cos(CAMERA_ANGLE_OF_ALTITUDE)
 );
 
+final float TILE_SIDE_LENGTH = 69;                      // wu per tu
 final float K = 2.4452237;
+
+final color AMBIENT_LIGHT = color(200, 200, 250);
 
 /* ----- FUNCS ----- */
 
@@ -48,6 +47,8 @@ void initFromJSON(String path)
   println("Loading .json with archetype: " + archetype);
   if (archetype.equals("SPRITES")) {
     parseSpritesJSON(json);
+  } else if (archetype.equals("TILES")) {
+    parseTilesJSON(json);
   } else if (archetype.equals("PROPS")) {
     parsePropsJSON(json);
   } else {
@@ -61,22 +62,54 @@ void initFromJSON(String path)
  */
 void parseSpritesJSON(JSONObject json)
 {
-  sprite_map = new HashMap<String, Sprite>();
+  //sprite_map = new HashMap<String, Sprite>();
   
   JSONArray jsprites = json.getJSONArray("sprites");
   for (int i = 0; i < jsprites.size(); ++i) {
     JSONObject jsprite = jsprites.getJSONObject(i);
     String jpath       = jsprite.getString("path");
-    String jzd_path    = jsprite.getString("zd_path");
+    String jzd_path    = null;
+    if (!jsprite.isNull("zd_path")) // this sprite does have zd data
+      jzd_path         = jsprite.getString("zd_path");
     String jname       = jsprite.getString("name");
-    int jzd_offset     = jsprite.getInt("zd_offset");
+    int jzd_offset     = 0;
+    if (!jsprite.isNull("zd_offset")) // this sprite does have zd data
+      jzd_offset       = jsprite.getInt("zd_offset");
     
     PImage pi = loadImage(jpath);
-    PImage zd = loadImage(jzd_path);
+    PImage zd = null;
+    if (jzd_path != null)
+      zd = loadImage(jzd_path);
     Sprite sp = new Sprite(pi, zd, jname, jzd_offset);
     
     // Sprite data goes into a map from names -> Sprites
     sprite_map.put(jname, sp);
+  }
+}
+
+/**
+ * Parses the data stored in a .json with the archetype "TILES" and updates
+ * <sprite_map> accordingly.
+ */
+void parseTilesJSON(JSONObject json)
+{
+  tiles = new ArrayList<Tile>();
+  
+  JSONArray jtiles = json.getJSONArray("tiles");
+  for (int i = 0; i < jtiles.size(); ++i) {
+    JSONObject jtile = jtiles.getJSONObject(i);
+    String jsprite   = jtile.getString("sprite");
+    JSONArray jpos   = jtile.getJSONArray("pos");
+    PVector pos      = new PVector(
+      jpos.getFloat(0),
+      jpos.getFloat(1),
+      jpos.getFloat(2)
+    );
+    // jpos was stored in tile coordinates, so we need to convert to world coordinates
+    pos = pv_scale(pos, TILE_SIDE_LENGTH);
+    
+    Tile t = new Tile(jsprite, pos);
+    tiles.add(t);
   }
 }
 
@@ -98,6 +131,8 @@ void parsePropsJSON(JSONObject json)
       jpos.getFloat(1),
       jpos.getFloat(2)
     );
+    // jpos was stored in tile coordinates, so we need to convert to world coordinates
+    pos = pv_scale(pos, TILE_SIDE_LENGTH);
     
     Prop p = new Prop(jsprite, pos);
     props.add(p);
@@ -230,7 +265,7 @@ float distanceFromCameraPlane(PVector wc)
  * corner of the sprite and <d> being the depth of the sprite's base (usually bottom edge).
  * Depth buffer is used to mask pixels closer to camera.
  */
-void addSprite(Sprite sp, PVector tl, float d)
+void addSprite(Sprite sp, PVector tl, float d, boolean check_zd)
 {
   //println("camera.c:  " + camera.c);
   //println("camera.tl: " + camera.tl);
@@ -280,19 +315,38 @@ void addSprite(Sprite sp, PVector tl, float d)
       //println("sp_xy: [ " + sp_x + ", " + sp_y + " ]");
       //println("t:     [ " + t_x  + ", " + t_y  + " ]");
       
-      int zd_value = sp.zd_data.pixels[sp_x + sp.w * sp_y] & 0xFF;
-      float depth  = d + K * (sp.zd_offset - zd_value);
-      if (zd.frame[sc_y][sc_x] <= depth) // is this pixel occluded?
-        continue;
       if ((sp.data.pixels[sp_x + sp.w * sp_y] & 0xFF000000) == 0) // is this pixel transparent?
         continue;
-      zd.frame[sc_y][sc_x] = depth; // update depth buffer
-      zd.min = min(depth, zd.min);
-      zd.max = max(depth, zd.max);
+      if (check_zd) {
+        int zd_value = sp.zd_data.pixels[sp_x + sp.w * sp_y] & 0xFF;
+        float depth  = d + K * (sp.zd_offset - zd_value);
+        if (zd.frame[sc_y][sc_x] <= depth) // is this pixel occluded?
+          continue;
+        zd.frame[sc_y][sc_x] = depth; // update depth buffer
+        zd.min = min(depth, zd.min);
+        zd.max = max(depth, zd.max);
+      }
+      
       fb.frame[sc_y][sc_x] = sp.data.pixels[sp_x + sp.w * sp_y]; // add sprite color to frame buffer
     }
   }
   updatePixels();
+}
+
+/**
+ * Draws (adds to frame buffer) the specified tile <t>.
+ */
+void addTile(Tile t)
+{
+  Sprite sp = sprite_map.get(t.sprite_name);
+  PVector gc = worldToGrid(t.pos);                              // grid coordinate of this prop's position
+  PVector tl = PVector.add(gc, new PVector(-sp.w / 2, -sp.h));  // top-left grid coordinate of this prop's sprite
+  tl = new PVector(floor(tl.x), floor(tl.y));                   // align to world grid
+  if (
+    camera.inView(tl.x, tl.y, sp.w, sp.h)
+  ) {
+    addSprite(sp, tl, distanceFromCameraPlane(t.pos), false);
+  }
 }
 
 /**
@@ -311,7 +365,7 @@ void addProp(Prop p)
   ) {
     //println("tl: " + tl);
     //println("d:  " + distanceFromCameraPlane(p.pos));
-    addSprite(sp, tl, distanceFromCameraPlane(p.pos));
+    addSprite(sp, tl, distanceFromCameraPlane(p.pos), true);
   }
 }
 
@@ -322,8 +376,8 @@ JSONObject json;
 
 FrameBuffer fb;
 DepthBuffer zd;
-//ArrayList<Sprite> sprites;
 HashMap<String, Sprite> sprite_map;
+ArrayList<Tile> tiles;
 ArrayList<Prop> props;
 Camera camera;
 
@@ -348,7 +402,9 @@ void setup()
   zd = new DepthBuffer();
   camera = new Camera(new PVector(0, 0), 1);
   
+  sprite_map = new HashMap<String, Sprite>();
   initFromJSON("data/sprites.json");
+  initFromJSON("data/tiles.json");
   initFromJSON("data/props.json");
   //println(X_UNIT);
   //println(Y_UNIT);
@@ -402,6 +458,9 @@ void draw()
   fb.clear();
   zd.clear();
   
+  for (int i = 0; i < tiles.size(); ++i) {
+    addTile(tiles.get(i));
+  }
   for (int i = 0; i < props.size(); ++i) {
     addProp(props.get(i));
   }

@@ -8,27 +8,27 @@
 	},
 	{
 		"sprite": "loy_mech_01_up",
-		"pos": [ 0, 58, 0 ]
+		"pos": [ 0, 0.84, 0 ]
 	},
 	{
 		"sprite": "greybox_1_2",
-		"pos": [ 136, 0, 136 ]
+		"pos": [ 2, 0, 2 ]
 	},
 	{
 		"sprite": "greybox_2_2",
-		"pos": [ 136, 0, 68 ]
+		"pos": [ 2, 0, 1 ]
 	},
 	{
 		"sprite": "greybox_2_2",
-		"pos": [ 68, 0, 136 ]
+		"pos": [ 1, 0, 2 ]
 	},
 	{
 		"sprite": "greybox_1_2",
-		"pos": [ 136, 0, 0 ]
+		"pos": [ 2, 0, 0 ]
 	},
 	{
 		"sprite": "greybox_1_2",
-		"pos": [ 0, 0, 136 ]
+		"pos": [ 0, 0, 2 ]
 	}
 ]
 }

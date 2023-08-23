@@ -1,0 +1,42 @@
+{
+"archetype": "TILES",
+"tiles":
+[
+	{
+		"sprite": "light_asphalt",
+		"pos": [ 0, 0, 0 ]
+	},
+	{
+		"sprite": "light_asphalt",
+		"pos": [ 1, 0, 0 ]
+	},
+	{
+		"sprite": "light_asphalt",
+		"pos": [ 1, 0, 1 ]
+	},
+	{
+		"sprite": "light_asphalt",
+		"pos": [ 0, 0, 1 ]
+	},
+	{
+		"sprite": "light_asphalt",
+		"pos": [-1, 0, 1 ]
+	},
+	{
+		"sprite": "light_asphalt",
+		"pos": [-1, 0, 0 ]
+	},
+	{
+		"sprite": "light_asphalt",
+		"pos": [-1, 0,-1 ]
+	},
+	{
+		"sprite": "light_asphalt",
+		"pos": [ 0, 0,-1 ]
+	},
+	{
+		"sprite": "light_asphalt",
+		"pos": [ 1, 0,-1 ]
+	}
+]
+}

@@ -25,6 +25,10 @@
 		"zd_path": "sprites/greybox_1_2_zd.png",
 		"name": "greybox_2_2",
 		"zd_offset": 161
+	},
+	{
+		"path": "sprites/light_asphalt.png",
+		"name": "light_asphalt"
 	}
 ]
 }

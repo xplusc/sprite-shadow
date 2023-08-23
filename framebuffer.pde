@@ -77,7 +77,23 @@ class FrameBuffer {
         //print("fb_xy: (" + fb_x + ", " + fb_y + ")\n");
         //println(fb_x + w * fb_y);
         //print("frame[fb_y][fb_x]: " + frame[fb_y][fb_x] + "\n");
-        pixels[SCREEN_WIDTH * y + x] = frame[y][x];
+        color albedo    = frame[y][x];
+        float[] rgb_alb = {(float) (albedo >> 16 & 0xFF) / 255, (float) (albedo >> 8 & 0xFF) / 255, (float) (albedo & 0xFF) / 255};
+        float[] rgb_amb = {(float) (AMBIENT_LIGHT >> 16 & 0xFF) / 255, (float) (AMBIENT_LIGHT >> 8 & 0xFF) / 255, (float) (AMBIENT_LIGHT & 0xFF) / 255};
+        color pixel_color = color(
+          (int) (255 * rgb_alb[0] * rgb_amb[0]),
+          (int) (255 * rgb_alb[1] * rgb_amb[1]),
+          (int) (255 * rgb_alb[2] * rgb_amb[2])
+        );
+        //if ((albedo & 0xFF) > 0) {
+        //  println("albedo:  " + albedo);
+        //  println("b_alb:   " + (albedo & 0xFF));
+        //  println("r_alb / 255: " + ((float) (albedo & 0xFF) / 255));
+        //  println("rgb_alb: [ " + rgb_alb[0] + ", " + rgb_alb[1] + ", " + rgb_alb[2] + " ]");
+        //  println("rgb_amb: [ " + rgb_amb[0] + ", " + rgb_amb[1] + ", " + rgb_amb[2] + " ]");
+        //  println("pixel_color: " + pixel_color);
+        //}
+        pixels[SCREEN_WIDTH * y + x] = pixel_color;
       }
     }
     updatePixels();
