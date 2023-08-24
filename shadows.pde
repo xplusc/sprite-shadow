@@ -42,7 +42,7 @@ void initFromJSON(String path)
 {
   json = loadJSONObject(path);
   String archetype = json.getString("archetype");
-  println("Loading .json with archetype: " + archetype);
+  println("Loading JSON with archetype: " + archetype);
   if (archetype.equals("SPRITES")) {
     parseSpritesJSON(json);
   } else if (archetype.equals("TILES")) {
@@ -52,7 +52,7 @@ void initFromJSON(String path)
   } else if (archetype.equals("LIGHTING")) {
     parseLightingJSON(json);
   } else {
-    println("initFromJSON(): Archetype not found.");
+    println("initFromJSON(): Archetype \"" + archetype + "\" not found.");
   }
 }
 
@@ -141,15 +141,27 @@ void parsePropsJSON(JSONObject json)
 
 /**
  * Parses the data stored in a .json with the archetype "LIGHTING" and updates
- * <ambient_light> accordingly.
+ * <ambient_light>, <directional_light>, and <directional_light_dir> accordingly.
  */
 void parseLightingJSON(JSONObject json)
 {
-  // <ambient_light>, color stored as float[3]
+  // colors stored as float[3]
   JSONArray jambient = json.getJSONArray("ambient");
   ambient_light[0] = jambient.getFloat(0);
   ambient_light[1] = jambient.getFloat(1);
   ambient_light[2] = jambient.getFloat(2);
+  JSONObject jdirectional = json.getJSONObject("directional");
+  JSONArray  jcolor       = jdirectional.getJSONArray("color");
+  directional_light[0] = jcolor.getFloat(0);
+  directional_light[1] = jcolor.getFloat(1);
+  directional_light[2] = jcolor.getFloat(2);
+  float jazimuth   = jdirectional.getFloat("azimuth")   * PI / 180;
+  float jelevation = jdirectional.getFloat("elevation") * PI / 180;
+  float x     = cos(jazimuth) * cos(jelevation);
+  float y     = sin(jelevation);
+  float z     = sin(jazimuth) * cos(jelevation);
+  PVector dir = new PVector(x, y, z);       // wc
+  directional_light_dir = worldToGrid(dir); // gc
 }
 
 /**
@@ -394,6 +406,8 @@ ArrayList<Tile> tiles;
 ArrayList<Prop> props;
 Camera camera;
 float[] ambient_light;
+float[] directional_light;
+PVector directional_light_dir;
 
 // flags
 boolean zdepth;
@@ -416,26 +430,15 @@ void setup()
   zd = new DepthBuffer();
   camera = new Camera(new PVector(0, 0), 1);
   ambient_light = new float[3];
+  directional_light = new float[3];
   
-  sprite_map = new HashMap<String, Sprite>();
   initFromJSON("data/sprites.json");
   initFromJSON("data/tiles.json");
   initFromJSON("data/props.json");
   initFromJSON("data/lighting.json");
-  //println(X_UNIT);
-  //println(Y_UNIT);
-  //println(Z_UNIT);
-  //println(C_UNIT);
-  //println(C_UNIT.dot(new PVector(1, 0, 0)));
-  //println(C_UNIT.dot(new PVector(0, 1, 0)));
-  //println(C_UNIT.dot(new PVector(0, 0, 1)));
-  //println(screenToWorld(new PVector(0, 360)));
-  //PVector v = new PVector( 100, 0,  200);
-  //println(v);
-  //println(worldToScreen(v));
-  //println(screenToWorld(worldToScreen(v)));
-  //println(fb.w * fb.h);
-  //println(SCREEN_WIDTH * SCREEN_HEIGHT);
+  
+  println("directional_light:     [ " + directional_light[0] + ", " + directional_light[1] + ", " + directional_light[2] + " ]");
+  println("directional_light_dir: " + directional_light_dir);
   
   // initialize flags
   zdepth  = false;
@@ -474,7 +477,6 @@ void keyPressed()
 
 void draw()
 {
-  //background(0);
   fb.clear();
   zd.clear();
   
@@ -484,24 +486,6 @@ void draw()
   for (int i = 0; i < props.size(); ++i) {
     addProp(props.get(i));
   }
-  
-  /*drawPoint(new PVector(0, 0, 0));
-  int size = 20;
-  for (int i = 1; i <= size; ++i) {
-    drawPoint(new PVector(10 * i, 0, 0));
-    drawPoint(new PVector(0, 10 * i, 0));
-    drawPoint(new PVector(0, 0, 10 * i));
-    drawPoint(new PVector(10 * i, 10 * size, 0));
-    drawPoint(new PVector(10 * size, 10 * i, 0));
-    drawPoint(new PVector(0, 10 * i, 10 * size));
-    drawPoint(new PVector(0, 10 * size, 10 * i));
-    drawPoint(new PVector(10 * i, 0, 10 * size));
-    drawPoint(new PVector(10 * size, 0, 10 * i));
-    drawPoint(new PVector(10 * i, 10 * size, 10 * size));
-    drawPoint(new PVector(10 * size, 10 * i, 10 * size));
-    drawPoint(new PVector(10 * size, 10 * size, 10 * i));
-    if (zdepth) { debug = false; }
-  }*/
   
   if (zdepth) {
     zd.draw();
