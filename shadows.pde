@@ -394,6 +394,29 @@ void addProp(Prop p)
   }
 }
 
+/**
+ * Reads the per-pixel lighting data from <lb> and applies it to
+ * the per-pixel albedos from <fb>.
+ */
+void applyLightToFrame(FrameBuffer fb, LightBuffer lb)
+{
+  for (int y = 0; y < fb.h; ++y) {
+    for (int x = 0; x < fb.w; ++x) {
+      color albedo = fb.frame[y][x];
+      // convert <albedo> into a float[3] color representation
+      float[] rgb_albedo = {(float) (albedo >> 16 & 0xFF) / 255, (float) (albedo >> 8 & 0xFF) / 255, (float) (albedo & 0xFF) / 255};
+      // multiply the albedo color by the lighting color
+      color new_pixel_color = color(
+        (int) (255 * rgb_albedo[0] * lb.frame[y][x][0]),
+        (int) (255 * rgb_albedo[1] * lb.frame[y][x][1]),
+        (int) (255 * rgb_albedo[2] * lb.frame[y][x][2])
+      );
+      
+      fb.frame[y][x] = new_pixel_color;
+    }
+  }
+}
+
 /* ----- SETUP ----- */
 
 // mutable globals
@@ -401,6 +424,7 @@ JSONObject json;
 
 FrameBuffer fb;
 DepthBuffer zd;
+LightBuffer lb;
 HashMap<String, Sprite> sprite_map;
 ArrayList<Tile> tiles;
 ArrayList<Prop> props;
@@ -428,6 +452,7 @@ void setup()
   
   fb = new FrameBuffer();
   zd = new DepthBuffer();
+  lb = new LightBuffer();
   camera = new Camera(new PVector(0, 0), 1);
   ambient_light = new float[3];
   directional_light = new float[3];
@@ -479,6 +504,7 @@ void draw()
 {
   fb.clear();
   zd.clear();
+  lb.clear();
   
   for (int i = 0; i < tiles.size(); ++i) {
     addTile(tiles.get(i));
@@ -486,6 +512,8 @@ void draw()
   for (int i = 0; i < props.size(); ++i) {
     addProp(props.get(i));
   }
+  
+  applyLightToFrame(fb, lb);
   
   if (zdepth) {
     zd.draw();
