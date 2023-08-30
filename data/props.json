@@ -11,6 +11,10 @@
 		"pos": [ 0, 0.84, 0 ]
 	},
 	{
+		"sprite": "citylit",
+		"pos": [-2, 0, 0.5 ]
+	},
+	{
 		"sprite": "greybox_1_2",
 		"pos": [ 2, 0, 2 ]
 	},

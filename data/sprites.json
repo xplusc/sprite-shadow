@@ -27,6 +27,12 @@
 		"zd_offset": 161
 	},
 	{
+		"path": "sprites/citylit_16_3000.png",
+		"zd_path": "sprites/citylit_16_3000_zd.png",
+		"name": "citylit",
+		"zd_offset": 147
+	},
+	{
 		"path": "sprites/light_asphalt.png",
 		"name": "light_asphalt"
 	}
