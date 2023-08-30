@@ -31,6 +31,7 @@ final PVector C_UNIT = new PVector                      // unit vector in the di
 
 final float TILE_SIDE_LENGTH = 69;                      // wu per tu
 final float K = 2.4452237;
+final float LIGHTING_CHECK_DISTANCE = 160;
 
 /* ----- FUNCS ----- */
 
@@ -160,17 +161,14 @@ void parseLightingJSON(JSONObject json)
   float x     = cos(jazimuth) * cos(jelevation);
   float y     = sin(jelevation);
   float z     = sin(jazimuth) * cos(jelevation);
-  PVector dir = new PVector(x, y, z);       // wc
-  directional_light_dir = worldToGrid(dir); // gc
+  directional_light_dir = new PVector(x, y, z); // wc
 }
 
 /**
- * Clamps the value of <x> to be between the bounds <l> and <u>.
+ * Returns the sign of <n>.
  */
-float clamp(float x, float l, float u)
-{
-  return min(max(x, l), u);
-}
+int sign(int n)   { return n < 0 ? -1 : 1; }
+int sign(float n) { return n < 0 ? -1 : 1; }
 
 /**
  * Scales vector <p> by <s>
@@ -288,9 +286,9 @@ float distanceFromCameraPlane(PVector wc)
 /**
  * Draws (adds to frame buffer) the specified sprite <sp> with <tl> being the top-left 
  * corner of the sprite and <d> being the depth of the sprite's base (usually bottom edge).
- * Depth buffer is used to mask pixels closer to camera.
+ * Depth buffer is used to perform depth sorting.
  */
-void addSprite(Sprite sp, PVector tl, float d, boolean check_zd)
+void drawSprite(Sprite sp, PVector tl, float d, boolean check_zd)
 {
   //println("camera.c:  " + camera.c);
   //println("camera.tl: " + camera.tl);
@@ -330,8 +328,8 @@ void addSprite(Sprite sp, PVector tl, float d, boolean check_zd)
     for (int sc_x = (int) start_sc.x; sc_x < (int) end_sc.x; ++sc_x) {
       float t_x = (sc_x - start_sc.x) / drawn_w;
       float t_y = (sc_y - start_sc.y) / drawn_h;
-      t_x = clamp(t_x, 0, 1); // wish I could get rid of these (maybe I can?)
-      t_y = clamp(t_y, 0, 1);
+      t_x = constrain(t_x, 0, 1); // wish I could get rid of these (maybe I can?)
+      t_y = constrain(t_y, 0, 1);
       int sp_x = (int) (start_sp.x + t_x * picked_w);
       int sp_y = (int) (start_sp.y + t_y * picked_h);
       //println();
@@ -361,7 +359,7 @@ void addSprite(Sprite sp, PVector tl, float d, boolean check_zd)
 /**
  * Draws (adds to frame buffer) the specified tile <t>.
  */
-void addTile(Tile t)
+void drawTile(Tile t)
 {
   Sprite sp = sprite_map.get(t.sprite_name);
   PVector gc = worldToGrid(t.pos);                              // grid coordinate of this prop's position
@@ -370,14 +368,14 @@ void addTile(Tile t)
   if (
     camera.inView(tl.x, tl.y, sp.w, sp.h)
   ) {
-    addSprite(sp, tl, distanceFromCameraPlane(t.pos), false);
+    drawSprite(sp, tl, distanceFromCameraPlane(t.pos), false);
   }
 }
 
 /**
  * Draws (adds to frame buffer) the specified prop <p>.
  */
-void addProp(Prop p)
+void drawProp(Prop p)
 {
   Sprite sp = sprite_map.get(p.sprite_name);
   PVector gc = worldToGrid(p.pos);                              // grid coordinate of this prop's position
@@ -390,7 +388,104 @@ void addProp(Prop p)
   ) {
     //println("tl: " + tl);
     //println("d:  " + distanceFromCameraPlane(p.pos));
-    addSprite(sp, tl, distanceFromCameraPlane(p.pos), true);
+    drawSprite(sp, tl, distanceFromCameraPlane(p.pos), true);
+  }
+}
+
+/**
+ * Applies the global directional light as defined in the lighting JSON by
+ * calculating which pixels aren't occluded in the direction of the light.
+ * Updates the light buffer accordingly.
+ */
+void applyGlobalDirectionalLight(DepthBuffer zd, LightBuffer lb)
+{
+  PVector grid_dir = worldToGrid(directional_light_dir);         // gc
+  float zslope = distanceFromCameraPlane(directional_light_dir); // delta z / wu
+  float slope  = abs(grid_dir.y / grid_dir.x);
+  int x_dir    = sign(grid_dir.x);
+  int y_dir    = sign(grid_dir.y);
+  float zslope_x = zslope / (grid_dir.x * camera.z);
+  float zslope_y = zslope / (grid_dir.y * camera.z);
+  //println("grid_dir: " + grid_dir);
+  //println("slope:    " + slope);
+  //println("zslope:   " + zslope);
+  //println("x_dir:    " + x_dir);
+  //println("y_dir:    " + y_dir);
+  int check_distance = (int) (camera.z * LIGHTING_CHECK_DISTANCE /*/ abs(zslope)*/);
+  //println("check_d:  " + check_distance);
+  for (int target_y = 0; target_y < lb.h; ++target_y) {
+    for (int target_x = 0; target_x < lb.w; ++target_x) {
+      float target_depth = zd.frame[target_y][target_x];
+      boolean occluded = false;
+      int j = 0;
+      //println("(tx, ty): [ " + target_x + ", " + target_y + " ]");
+      //println("target_d: " + target_depth);
+      if (slope < 1) {
+        //println("incrementing x");
+        for (int i = 1; i < check_distance; ++i) {
+          float other_coord = slope * i;
+          if (round(other_coord) != j)
+            ++j;
+          int polled_x = target_x + x_dir * i;
+          int polled_y = target_y + y_dir * j;
+          //println("othr_crd: " + other_coord);
+          //println("(px, py): [ " + polled_x + ", " + polled_y + " ]");
+          if ( // don't check out of bounds
+            polled_x < 0 ||
+            polled_x >= SCREEN_WIDTH ||
+            polled_y < 0 ||
+            polled_y >= SCREEN_HEIGHT
+          ) {
+            break;
+          }
+          float polled_depth = zd.frame[polled_y][polled_x];
+          float lower_bound  = target_depth + zslope_x * (i - 0.5);
+          float upper_bound  = lower_bound  + zslope_x * (i + 0.5);
+          //println("pdepth:   " + polled_depth);
+          //println("low_d:    " + lower_bound);
+          //println("up_d:     " + upper_bound);
+          if (
+            (polled_depth >= lower_bound && polled_depth <  upper_bound) ||
+            (polled_depth <  lower_bound && polled_depth >= upper_bound)
+          ) { // something occludes the target pixel
+            occluded = true;
+            break;
+          }
+        }
+      } else {
+        //println("incrementing y");
+        for (int i = 1; i < check_distance; ++i) {
+          float other_coord = (1 / slope) * (i - 0) + 0;
+          if ((int) round(other_coord) != j)
+        ++j;
+          int polled_y = target_y + y_dir * i;
+          int polled_x = target_x + x_dir * j;
+          //println("othr_crd: " + other_coord);
+          //println("(px, py):   [ " + polled_x + ", " + polled_y + " ]");
+          if ( // don't check out of bounds
+            polled_x < 0 ||
+            polled_x >= SCREEN_WIDTH ||
+            polled_y < 0 ||
+            polled_y >= SCREEN_HEIGHT
+          ) {
+            break;
+          }
+          float polled_depth = zd.frame[polled_y][polled_x];
+          float lower_bound  = target_depth + zslope_y * (i - 0.5);
+          float upper_bound  = lower_bound  + zslope_y;
+          if (polled_depth >= lower_bound && polled_depth < upper_bound) { // something occludes the target pixel
+            occluded = true;
+            break;
+          }
+        }
+      }
+      
+      if (!occluded) { // this pixel is in the light
+        lb.frame[target_y][target_x][0] += directional_light[0];
+        lb.frame[target_y][target_x][1] += directional_light[1];
+        lb.frame[target_y][target_x][2] += directional_light[2];
+      }
+    }
   }
 }
 
@@ -431,7 +526,7 @@ ArrayList<Prop> props;
 Camera camera;
 float[] ambient_light;
 float[] directional_light;
-PVector directional_light_dir;
+PVector directional_light_dir; // wc, normalized
 
 // flags
 boolean zdepth;
@@ -462,8 +557,8 @@ void setup()
   initFromJSON("data/props.json");
   initFromJSON("data/lighting.json");
   
-  println("directional_light:     [ " + directional_light[0] + ", " + directional_light[1] + ", " + directional_light[2] + " ]");
-  println("directional_light_dir: " + directional_light_dir);
+  //println("directional_light:     [ " + directional_light[0] + ", " + directional_light[1] + ", " + directional_light[2] + " ]");
+  //println("directional_light_dir: " + directional_light_dir);
   
   // initialize flags
   zdepth  = false;
@@ -507,11 +602,13 @@ void draw()
   lb.clear();
   
   for (int i = 0; i < tiles.size(); ++i) {
-    addTile(tiles.get(i));
+    drawTile(tiles.get(i));
   }
   for (int i = 0; i < props.size(); ++i) {
-    addProp(props.get(i));
+    drawProp(props.get(i));
   }
+  
+  applyGlobalDirectionalLight(zd, lb);
   
   applyLightToFrame(fb, lb);
   
