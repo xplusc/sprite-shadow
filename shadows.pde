@@ -270,7 +270,7 @@ void keyPressed()
     float x, y, z;
     switch (keyCode) {
       /* uncomment this vvv stuff to allow for spinning the light source around */
-      /*case LEFT:  azimuth += 0.01;
+      /*case LEFT:  azimuth += 0.01;                            // left + right arrow keys rotate global directional light source
                   x = cos(azimuth) * cos(elevation);
                   y = sin(elevation);
                   z = sin(azimuth) * cos(elevation);
